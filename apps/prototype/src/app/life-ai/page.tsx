@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { useApp } from "@/lib/app-context";
+import { parseShopAddIntent } from "@/lib/life-ai-parse";
 import { lifeAiSuggestions } from "@/lib/mock-data";
 
 type Reply = {
@@ -42,7 +43,7 @@ export default function LifeAiPage() {
     {
       user: "",
       assistant:
-        "Regel-Assistent (kein ChatGPT): verbindet Einkauf, Plan und Zuhause. Tippen oder Mikrofon — z. B. Milch auf die Liste, Müll erledigt.",
+        "Regel-Assistent (kein ChatGPT): z. B. „Tomaten kaufen“, „Milch auf die Liste“, „Müll erledigt“.",
     },
   ]);
 
@@ -58,19 +59,7 @@ export default function LifeAiPage() {
 
   function interpret(raw: string): Reply {
     const text = raw.toLowerCase();
-    if (
-      text.includes("milch") ||
-      text.includes("kaffee") ||
-      text.includes("waschmittel")
-    ) {
-      addShopItems(["Milch", "Kaffee", "Waschmittel"], { source: "ai" });
-      return {
-        user: raw,
-        assistant:
-          "Erledigt: Milch, Kaffee und Waschmittel stehen auf der Einkaufsliste (oder sind wieder aktiv).",
-        action: { label: "Zur Einkaufsliste", href: "/einkauf" },
-      };
-    }
+
     if (text.includes("müll") && (text.includes("erledigt") || text.includes("fertig"))) {
       const muell = state.routines.find((r) =>
         r.title.toLowerCase().includes("müll"),
@@ -82,14 +71,47 @@ export default function LifeAiPage() {
         action: { label: "Zuhause öffnen", href: "/zuhause" },
       };
     }
-    if (text.includes("erledigen") || text.includes("heute")) {
+
+    // Demo-Vorschlag: alle drei auf einmal
+    if (
+      text.includes("milch") &&
+      text.includes("kaffee") &&
+      text.includes("waschmittel")
+    ) {
+      addShopItems(["Milch", "Kaffee", "Waschmittel"], { source: "ai" });
       return {
         user: raw,
         assistant:
-          "Schau unter Heute: Termine, offene Routinen und ggf. Spar-Tipps. Wenige Prioritäten statt langer Listen.",
-        action: { label: "Heute öffnen", href: "/" },
+          "Erledigt: Milch, Kaffee und Waschmittel stehen auf der Einkaufsliste (oder sind wieder aktiv).",
+        action: { label: "Zur Einkaufsliste", href: "/einkauf" },
       };
     }
+
+    const shopNames = parseShopAddIntent(raw);
+    if (shopNames) {
+      addShopItems(shopNames, { source: "ai" });
+      const label = shopNames.join(", ");
+      return {
+        user: raw,
+        assistant: `Erledigt: ${label} ${shopNames.length === 1 ? "steht" : "stehen"} auf der Einkaufsliste.`,
+        action: { label: "Zur Einkaufsliste", href: "/einkauf" },
+      };
+    }
+
+    // Einzelprodukte ohne „kaufen“-Satz
+    const singles: string[] = [];
+    if (/\bmilch\b/.test(text)) singles.push("Milch");
+    if (/\bkaffee\b/.test(text)) singles.push("Kaffee");
+    if (/\bwaschmittel\b/.test(text)) singles.push("Waschmittel");
+    if (singles.length > 0) {
+      addShopItems(singles, { source: "ai" });
+      return {
+        user: raw,
+        assistant: `Erledigt: ${singles.join(", ")} auf der Einkaufsliste.`,
+        action: { label: "Zur Einkaufsliste", href: "/einkauf" },
+      };
+    }
+
     if (text.includes("ausweis") || text.includes("pass") || text.includes("frist")) {
       return {
         user: raw,
@@ -98,7 +120,11 @@ export default function LifeAiPage() {
         action: { label: "Plan öffnen", href: "/plan" },
       };
     }
-    if (text.includes("abendessen") || text.includes("plane") || text.includes("essen")) {
+    if (
+      text.includes("abendessen") ||
+      text.includes("essensplan") ||
+      (text.includes("plane") && text.includes("essen"))
+    ) {
       return {
         user: raw,
         assistant:
@@ -106,10 +132,18 @@ export default function LifeAiPage() {
         action: { label: "Essensplan", href: "/einkauf/essensplan" },
       };
     }
+    if (text.includes("erledigen") || /\bheute\b/.test(text)) {
+      return {
+        user: raw,
+        assistant:
+          "Schau unter Heute: Termine, offene Routinen und ggf. Spar-Tipps. Wenige Prioritäten statt langer Listen.",
+        action: { label: "Heute öffnen", href: "/" },
+      };
+    }
     return {
       user: raw,
       assistant:
-        "Verstanden — im Prototyp reagieren vor allem Liste, Müll und Essensplan. Probiere die Vorschläge.",
+        "Verstanden — z. B. „Tomaten kaufen“, „Milch auf die Liste“ oder „Müll ist erledigt“. Oder einen Vorschlag tippen.",
     };
   }
 
