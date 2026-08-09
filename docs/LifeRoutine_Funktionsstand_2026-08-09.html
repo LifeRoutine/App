@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <title>LifeRoutine – Funktionsstand &amp; Offene Punkte</title>
+  <style>
+    @page { margin: 18mm 16mm; size: A4; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.45;
+      color: #1a2330;
+      max-width: 180mm;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 20pt;
+      margin: 0 0 4pt;
+      color: #2f6f9f;
+    }
+    h2 {
+      font-size: 13pt;
+      margin: 18pt 0 6pt;
+      padding-bottom: 3pt;
+      border-bottom: 1.5px solid #2f6f9f;
+      color: #2f6f9f;
+    }
+    h3 {
+      font-size: 11pt;
+      margin: 12pt 0 4pt;
+      color: #1a2330;
+    }
+    .meta { color: #5a6570; font-size: 9.5pt; margin-bottom: 14pt; }
+    .tagline { font-style: italic; color: #3f5a6e; margin: 0 0 12pt; }
+    ul { margin: 4pt 0 8pt; padding-left: 16pt; }
+    li { margin: 2pt 0; }
+    .box {
+      background: #f4f8fb;
+      border: 1px solid #c5d5e0;
+      border-radius: 6px;
+      padding: 8pt 10pt;
+      margin: 8pt 0 12pt;
+    }
+    .ok { color: #1f7a45; }
+    .todo { color: #a65d00; }
+    .later { color: #5a6570; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 6pt 0 12pt;
+      font-size: 9.5pt;
+    }
+    th, td {
+      border: 1px solid #c5d5e0;
+      padding: 5pt 7pt;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #e8f1f7; }
+    .foot {
+      margin-top: 22pt;
+      padding-top: 8pt;
+      border-top: 1px solid #c5d5e0;
+      font-size: 8.5pt;
+      color: #5a6570;
+    }
+  </style>
+</head>
+<body>
+  <h1>LifeRoutine</h1>
+  <p class="tagline">Dein Alltag. Einfacher. — Funktionsstand &amp; offene Punkte</p>
+  <p class="meta">
+    Stand: 9. August 2026 · Prototyp: <code>apps/prototype</code> · lokal http://localhost:3001<br />
+    Konzept: V1.1 · Schwestermarke zu AquaRoutine
+  </p>
+
+  <div class="box">
+    <strong>Kurzfazit:</strong> Der lokale Prototyp deckt die Kernschleife Einkauf–Vorrat–Plan–Haushalt ab
+    und ist als PWA installierbar. Noch nicht „Produkt für Kunden“: keine echten Live-Angebotsfeeds,
+    kein Cloud-Sync/Login, kein Zahlungsabo. Angebotsprinzip: Prospekt verlinken + selbst markieren
+    oder Demo — <em>kein Scraping</em>.
+  </div>
+
+  <h2>1. Was jetzt funktioniert</h2>
+
+  <h3>Start &amp; Gerät</h3>
+  <ul>
+    <li>Onboarding: Name, Haushaltstyp, Ortssuche (Nominatim/OSM) + optional GPS</li>
+    <li>Persistenz lokal (<code>localStorage</code>)</li>
+    <li>PWA: Manifest, Icons, Service Worker, Install-Hinweis</li>
+    <li>Optionale App-PIN (lokal gehasht), Sperre nach Hintergrund</li>
+    <li>Datenschutz-Seite (Prinzipien, Löschen)</li>
+  </ul>
+
+  <h3>Heute</h3>
+  <ul>
+    <li>Prioritäten mit „Warum“, €-/Zeit-Nutzen, Verbund-Insights</li>
+    <li>Links zu Einstellungen / Haushalt</li>
+  </ul>
+
+  <h3>Einkauf</h3>
+  <ul>
+    <li><strong>Liste:</strong> Tippen, Barcode (Katalog → Open Food Facts → merken), privat/geteilt, Erledigt → Vorrat</li>
+    <li><strong>Angebote:</strong> Demo-Katalog (OfferProvider) + manuell „aus Prospekt markieren“; Badges Demo / Von dir</li>
+    <li><strong>Route / Extraweg:</strong> aus gewählten Märkten + Angeboten</li>
+    <li><strong>Märkte:</strong> Live OSM/Overpass am Standort; Auswahl speichern; Online-Prospekt-Links je Kette</li>
+    <li><strong>Vorräte:</strong> Menge +/−, Einheit, Mindestvorrat; Beleg-OCR → Vorrat; „Nachkaufen lohnt“</li>
+    <li><strong>Essensplan / Katalog / Angebote-Stub</strong></li>
+  </ul>
+
+  <h3>Zuhause · Plan · LifeAI · Haushalt</h3>
+  <ul>
+    <li>Routinen (abhaken, neu anlegen)</li>
+    <li>Plan: 3-Tage-Überblick; Dokumente &amp; Fristen (nur Metadaten, keine Ausweis-/Kartennummern)</li>
+    <li>LifeAI: regelbasierte Demo-Befehle (Liste/Routinen)</li>
+    <li>Haushalt: Mitglieder, Einladungs-Code (Demo gleicher Browser)</li>
+  </ul>
+
+  <h3>Einstellungen</h3>
+  <ul>
+    <li>Profil, Ort, Links zu Haushalt / Märkte / Katalog / Datenschutz / PWA-Install / PIN</li>
+  </ul>
+
+  <h2>2. Was noch gemacht werden muss</h2>
+
+  <h3 class="todo">A) Damit die App sich „echt“ anfühlt (lokal, hohe Priorität)</h3>
+  <ul>
+    <li>Frisch-Start ohne Fake-€-Angebote (Ersparnis nur aus Nutzer-Markierungen / später Partner)</li>
+    <li>Heute stärker nur aus echten Nutzerdaten speisen</li>
+    <li>LifeAI ehrlich benennen oder sinnvoll ausbauen (kein Chatbot-Versprechen)</li>
+    <li>Backup: Export/Import der lokalen Daten</li>
+    <li>Farben / Brand finalisieren</li>
+    <li>Wetter: live oder klar als Demo kennzeichnen</li>
+  </ul>
+
+  <h3 class="todo">B) Damit sie für Kunden funktioniert (Infrastruktur)</h3>
+  <ul>
+    <li>Kleiner Server / Backend</li>
+    <li>Login + echter Haushalt-Sync (mehrere Geräte)</li>
+    <li>HTTPS für zuverlässige PWA-Installation außer Heimnetz</li>
+    <li>Stripe (o. Ä.) für Abo-Zahlungen</li>
+    <li>Impressum / AGB / Datenschutzerklärung (Generator, nicht Copy-Paste fremder Firmen)</li>
+    <li>Gewerbe / Kleinunternehmer klären (außerhalb der App)</li>
+  </ul>
+
+  <h3 class="todo">C) Echte Supermarkt-Angebote (strategisch)</h3>
+  <ul>
+    <li>Partner: Aggregatoren und/oder Ketten (Pilot-Feed) — Anschreiben</li>
+    <li>OfferProvider um „partner“ erweitern (UI ist vorbereitet)</li>
+    <li><strong>Kein</strong> heimliches Prospekt-Scraping (ToS / Recht)</li>
+    <li>Zwischenlösung bleibt: Prospekt-Link + selbst markieren</li>
+  </ul>
+
+  <h3 class="later">D) Später / Vision</h3>
+  <ul>
+    <li>Besserer Barcode-Lookup, Beleg-Layouts, Preisverlauf</li>
+    <li>Autopilot höhere Stufen, Usability-Tests, Preismodell testen</li>
+    <li>Marke/Domain final, Kinder-Modus, Smart Home, Mobilität, …</li>
+  </ul>
+
+  <h2>3. Übersicht</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Bereich</th>
+        <th>Status</th>
+        <th>Nächster Schritt</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Einkaufsliste / Barcode / Vorrat</td>
+        <td class="ok">Funktioniert lokal</td>
+        <td>Demo-Angebote optional abschalten</td>
+      </tr>
+      <tr>
+        <td>Märkte (OSM) + Prospekt-Link</td>
+        <td class="ok">Funktioniert</td>
+        <td>Partner-Feed</td>
+      </tr>
+      <tr>
+        <td>€-Angebote automatisch</td>
+        <td class="todo">Nur Demo / manuell</td>
+        <td>Aggregator/Kette</td>
+      </tr>
+      <tr>
+        <td>Haushalt geteilt</td>
+        <td class="todo">Nur Demo (1 Gerät)</td>
+        <td>Cloud-Sync</td>
+      </tr>
+      <tr>
+        <td>PWA / PIN / Datenschutz-UI</td>
+        <td class="ok">Prototyp ok</td>
+        <td>Rechtstexte + HTTPS</td>
+      </tr>
+      <tr>
+        <td>Bezahlung / Abo</td>
+        <td class="later">Nicht gebaut</td>
+        <td>Stripe + Gewerbe</td>
+      </tr>
+      <tr>
+        <td>LifeAI</td>
+        <td class="todo">Regel-Demo</td>
+        <td>Ehrlich oder ausbauen</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>4. Empfohlene Reihenfolge</h2>
+  <ol>
+    <li>Lokal „echt“ machen (A): keine Fake-€, Backup, Brand</li>
+    <li>Feedback mit 3–5 Testern (PWA aufs Handy)</li>
+    <li>Anschreiben Aggregator/Kette (C)</li>
+    <li>Backend + Login + Stripe (B), wenn Validierung passt</li>
+  </ol>
+
+  <p class="foot">
+    LifeRoutine · Internes Statusdokument · Keine Rechts- oder Steuerberatung ·
+    Quelle: docs/memory (prototype, backlog, decisions) · Stand 2026-08-09
+  </p>
+</body>
+</html>

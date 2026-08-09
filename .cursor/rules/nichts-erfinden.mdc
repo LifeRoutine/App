@@ -1,0 +1,13 @@
+---
+description: Nichts erfinden — nur belegte Fakten und echte Datenquellen
+alwaysApply: true
+---
+
+# Nichts erfinden
+
+Stefan: **immer befolgen — nichts erfinden.**
+
+- Keine erfundenen Adressen, Märkte, Angebote, Preise, Öffnungszeiten oder Personen.
+- Demo-Daten nur, wenn klar als Demo gekennzeichnet **und** möglichst aus einer echten Quelle (z. B. OSM/Nominatim) stammen.
+- Bei Unsicherheit: weglassen, nachfragen oder „unbekannt / Quelle fehlt“ — nicht raten.
+- UI-Texte dürfen Beispiele erklären, aber keine falschen lokalen Fakten als Wahrheit darstellen.

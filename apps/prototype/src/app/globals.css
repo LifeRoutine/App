@@ -1,0 +1,151 @@
+@import "tailwindcss";
+
+:root {
+  /* Beruhigend & harmonisch: weiches Blaugrau + Sage, niedrige Sättigung */
+  --navy: #4a6f8c;
+  --navy-deep: #3a5a73;
+  --green: #5a9a7a;
+  --green-soft: #8bbfa5;
+  --mint: #e8f2ec;
+  --sand: #eef2f4;
+  --ink: #2c3e4a;
+  --muted: #6b7c88;
+  --surface: #f7faf9;
+  --line: rgba(74, 111, 140, 0.14);
+  --save: #4a8f6c;
+  --warn: #c4a35a;
+  --sun: #d4c9a8;
+  --coral: #a8b5c0;
+  --sky: #9ebfd0;
+  --background: #f2f5f6;
+  --foreground: #2c3e4a;
+}
+
+@theme inline {
+  --color-navy: var(--navy);
+  --color-navy-deep: var(--navy-deep);
+  --color-green: var(--green);
+  --color-green-soft: var(--green-soft);
+  --color-mint: var(--mint);
+  --color-sand: var(--sand);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-surface: var(--surface);
+  --color-line: var(--line);
+  --color-save: var(--save);
+  --color-warn: var(--warn);
+  --color-sun: var(--sun);
+  --color-coral: var(--coral);
+  --color-sky: var(--sky);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-manrope);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  background:
+    radial-gradient(900px 520px at 0% 0%, #dce8ef 0%, transparent 55%),
+    radial-gradient(820px 480px at 100% 0%, #ddeee6 0%, transparent 52%),
+    radial-gradient(700px 420px at 50% 100%, #e4ebe8 0%, transparent 48%),
+    var(--background);
+  background-attachment: fixed;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes soft-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(90, 154, 122, 0.22);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(90, 154, 122, 0);
+  }
+}
+
+@keyframes draw-check {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-rise {
+  animation: rise-in 0.45s ease-out both;
+}
+
+.animate-rise-delay-1 {
+  animation: rise-in 0.45s ease-out 0.06s both;
+}
+
+.animate-rise-delay-2 {
+  animation: rise-in 0.45s ease-out 0.12s both;
+}
+
+.animate-rise-delay-3 {
+  animation: rise-in 0.45s ease-out 0.18s both;
+}
+
+.mic-pulse {
+  animation: soft-pulse 2.8s ease-in-out infinite;
+}
+
+.check-draw {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 0;
+  animation: draw-check 0.5s ease-out both;
+}
+
+.panel-soft {
+  background: rgba(247, 250, 249, 0.94);
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.panel-soft .panel-kicker {
+  color: var(--muted);
+}
+
+.panel-soft .panel-accent {
+  color: var(--save);
+}
+
+/* Heroes: ruhig, weiches Blau → Sage */
+.hero-heute {
+  background: linear-gradient(145deg, #6b8fad 0%, #5a8fa0 48%, #5a9a7a 100%);
+  color: #fff;
+}
+
+.hero-einkauf {
+  background: linear-gradient(145deg, #5a9a7a 0%, #4f8a7e 42%, #4a6f8c 100%);
+  color: #fff;
+}
