@@ -388,6 +388,19 @@ export const recipes: Record<string, Recipe> = {
 };
 
 export function createDefaultState(): AppState {
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth() + 1).padStart(2, "0");
+  const d = String(today.getDate()).padStart(2, "0");
+  const todayISO = `${y}-${m}-${d}`;
+  const withDates = defaultEvents.map((ev) => {
+    const dt = new Date(`${todayISO}T12:00:00`);
+    dt.setDate(dt.getDate() + ev.dayOffset);
+    const yy = dt.getFullYear();
+    const mm = String(dt.getMonth() + 1).padStart(2, "0");
+    const dd = String(dt.getDate()).padStart(2, "0");
+    return { ...ev, date: `${yy}-${mm}-${dd}` };
+  });
   return {
     profile: {
       onboardingDone: false,
@@ -404,7 +417,7 @@ export function createDefaultState(): AppState {
     routines: structuredClone(
       defaultRoutines.map((r) => ({ ...r, visibility: "shared" as const })),
     ),
-    events: structuredClone(defaultEvents),
+    events: structuredClone(withDates),
     documents: structuredClone(defaultDocuments),
     pantry: structuredClone(defaultPantry),
     mealPlan: structuredClone(defaultMealPlan),

@@ -67,6 +67,9 @@ export type PlanEvent = {
   id: string;
   title: string;
   time: string;
+  /** YYYY-MM-DD — bevorzugte Speicherung */
+  date?: string;
+  /** Relativ zu „heute“; wird aus date abgeleitet / Legacy */
   dayOffset: number;
   kind: "termin" | "routine" | "essen" | "privat";
   detail: string;

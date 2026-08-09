@@ -29,10 +29,12 @@ Stand: 2026-08-09
 - **P4:** Backend/Auth/Sync + Stripe + Partner-Feed erst nach Feedback.
 - Angebote: kein Scraping; Crowdsource/OCR-Prospektfoto = optionale Stufe nach P1.
 
-## Hosting
-- **Tester jetzt:** Vercel Hobby (kostenlos) ok — PC muss nicht laufen.
-- **Business später (Stefan):** eher **Strato** (DE) als Dauer-Hosting — nicht fest verkabelt an Vercel.
-- Hinweis: Next.js braucht Node (VPS/Container), kein klassisches nur-PHP-Shared-Hosting.
+## Routinen / Müllkalender
+- Stefan: Abfuhrtermine kommen aus dem **Müllkalender des Landkreises/der Kommune** — **jedes Gebiet anders** (Portal, App, PDF, iCal, …).
+- **Kein Scraping** und keine „eine API für ganz DE“ erfinden.
+- Prototyp jetzt: manuelle Routine „Müll rausstellen“ / Nutzer markiert erledigt.
+- Später sinnvoll: Nutzer trägt Ort/Landkreis → **offizielle Quelle** (Link, iCal/ICS falls vorhanden, oder manuelle Termine) — pro Region Adapter, nicht generisch raten.
+
 
 
 ## Einkaufs-Loop

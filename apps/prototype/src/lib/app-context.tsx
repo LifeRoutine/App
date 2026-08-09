@@ -33,6 +33,7 @@ import type {
   HouseholdType,
   NearbyStore,
   PantryItem,
+  PlanEvent,
   Priority,
   ShopItem,
   ShopOffer,
@@ -47,6 +48,12 @@ import {
   parseQtyHint,
   statusFromAmount,
 } from "@/lib/pantry";
+import {
+  dayOffsetFromDate,
+  eventDateISO,
+  localDateISO,
+  normalizePlanEvent,
+} from "@/lib/plan-dates";
 import { hydrateAppState } from "@/lib/backup";
 import { makeInviteCode, warnLabelForMonths } from "@/lib/mock-data";
 
@@ -133,6 +140,14 @@ type AppContextValue = {
     warnMonths: number;
   }) => void;
   removeDocument: (id: string) => void;
+  addEvent: (input: {
+    title: string;
+    date: string;
+    time: string;
+    kind?: PlanEvent["kind"];
+    detail?: string;
+  }) => void;
+  removeEvent: (id: string) => void;
   resetDemo: () => void;
   importBackup: (next: AppState) => void;
 };
@@ -258,7 +273,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const waitOffer = openOffers.find((x) => x.offer.advice === "warten");
     const buyOffer = openOffers.find((x) => x.offer.advice === "kaufen");
     const openRoutine = state.routines.find((r) => !r.done);
-    const todayEvents = state.events.filter((e) => e.dayOffset === 0);
+    const today = localDateISO();
+    const todayEvents = state.events.filter(
+      (e) => eventDateISO(e, today) === today,
+    );
     const doc = state.documents[0];
     const list: Priority[] = [];
 
@@ -884,6 +902,52 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [update],
   );
 
+  const addEvent = useCallback(
+    (input: {
+      title: string;
+      date: string;
+      time: string;
+      kind?: PlanEvent["kind"];
+      detail?: string;
+    }) => {
+      const title = input.title.trim();
+      if (!title || !input.date) return;
+      const today = localDateISO();
+      const ev: PlanEvent = normalizePlanEvent(
+        {
+          id: `ev-${Date.now()}`,
+          title,
+          time: input.time || "12:00",
+          date: input.date,
+          dayOffset: dayOffsetFromDate(input.date, today),
+          kind: input.kind ?? "termin",
+          detail: input.detail?.trim() || "Selbst eingetragen.",
+          visibility: "shared",
+        },
+        today,
+      );
+      update((prev) => ({
+        ...prev,
+        events: [...prev.events, ev].sort((a, b) => {
+          const da = eventDateISO(a, today).localeCompare(eventDateISO(b, today));
+          if (da !== 0) return da;
+          return a.time.localeCompare(b.time);
+        }),
+      }));
+    },
+    [update],
+  );
+
+  const removeEvent = useCallback(
+    (id: string) => {
+      update((prev) => ({
+        ...prev,
+        events: prev.events.filter((e) => e.id !== id),
+      }));
+    },
+    [update],
+  );
+
   const resetDemo = useCallback(() => {
     const fresh = createDefaultState();
     setState(fresh);
@@ -940,6 +1004,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     joinWithInvite,
     addDocument,
     removeDocument,
+    addEvent,
+    removeEvent,
     resetDemo,
     importBackup,
   };

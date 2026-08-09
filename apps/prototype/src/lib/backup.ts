@@ -1,5 +1,6 @@
 import { createDefaultState } from "@/lib/mock-data";
 import { normalizePantryItem } from "@/lib/pantry";
+import { localDateISO, normalizePlanEvent } from "@/lib/plan-dates";
 import type { AppState } from "@/lib/types";
 
 export const BACKUP_FORMAT = "liferoutine.backup" as const;
@@ -29,7 +30,9 @@ export function hydrateAppState(raw: unknown): AppState {
     members: parsed.members ?? fallback.members,
     shoppingList: parsed.shoppingList ?? fallback.shoppingList,
     routines: parsed.routines ?? fallback.routines,
-    events: parsed.events ?? fallback.events,
+    events: (parsed.events ?? fallback.events).map((e) =>
+      normalizePlanEvent(e, localDateISO()),
+    ),
     documents: parsed.documents ?? fallback.documents,
     pantry: (parsed.pantry ?? fallback.pantry).map((p) => normalizePantryItem(p)),
     mealPlan: parsed.mealPlan ?? fallback.mealPlan,

@@ -15,7 +15,7 @@ Stand: 2026-08-09 · inkl. Abgleich Gemini-Empfehlungen
 - [ ] Bis dahin: keine LLM-Erwartung in der UI versprechen
 
 ## P3 — Validierung
-- [ ] Online-Deploy (Vercel) für Tester — Anleitung: `docs/Deploy-Tester.md`
+- [x] Online-Deploy (Vercel) für Tester — Anleitung: `docs/Deploy-Tester.md` (Repo `LifeRoutine/App`, Root `apps/prototype`)
 - [ ] PWA auf 3–5 Test-Handys, ~2 Wochen Alltagseinkauf
 - [ ] Feedback sammeln (Einkauf/Vorrat/Heute)
 
@@ -31,6 +31,7 @@ Stand: 2026-08-09 · inkl. Abgleich Gemini-Empfehlungen
 
 ## USP schärfen
 - [ ] Stärker: Vorrat/Mindestvorrat ↔ Routinen/Fristen automatisch verknüpfen (nicht nur Liste)
+- [ ] Müll: Landkreis-/Kommunen-Kalender anbinden (pro Region anders; ICS/Link/manuell — kein Scraping, nichts erfinden)
 - [ ] Schwesterlogik AquaRoutine später, nicht Blocker für P1
 
 ## Produkt / sonstig

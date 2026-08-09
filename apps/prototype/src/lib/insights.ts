@@ -1,4 +1,5 @@
 import { nearbyStoresHechingen } from "@/lib/mock-data";
+import { eventDateISO, localDateISO } from "@/lib/plan-dates";
 import type { AppState, NearbyStore, ShopItem } from "@/lib/types";
 
 function allStores(state: AppState): NearbyStore[] {
@@ -103,7 +104,9 @@ export function extrawegAdvice(state: AppState): ExtrawegAdvice[] {
 export function buildDayInsights(state: AppState): DayInsight[] {
   const insights: DayInsight[] = [];
   const zahnarzt = state.events.find(
-    (e) => e.dayOffset === 0 && e.title.toLowerCase().includes("zahnarzt"),
+    (e) =>
+      eventDateISO(e) === localDateISO() &&
+      e.title.toLowerCase().includes("zahnarzt"),
   );
   const pasta = state.mealPlan.find((m) => m.dayLabel === "Heute");
   if (zahnarzt && pasta) {
@@ -200,7 +203,9 @@ export function whyForPriority(
     return "Aus dem Plan — beeinflusst Essen und verfügbare Zeit heute.";
   }
   if (kind === "essen") {
-    const event = state.events.find((e) => e.kind === "termin" && e.dayOffset === 0);
+    const event = state.events.find(
+      (e) => e.kind === "termin" && eventDateISO(e) === localDateISO(),
+    );
     return event
       ? `Kalender sagt wenig Zeit nach ${event.title} → schnelles Gericht priorisiert.`
       : "Essensplan + Vorrat: Zutaten passen, Aufwand gering.";
