@@ -19,11 +19,13 @@ Stand: 2026-08-09 · inkl. Abgleich Gemini-Empfehlungen
 
 ## P3 — Validierung
 - [x] Online-Deploy (Vercel) für Tester — Anleitung: `docs/Deploy-Tester.md` (Repo `LifeRoutine/App`, Root `apps/prototype`)
+- [x] Demo-Login + getrennte Haushalte Irena/Saskia + Server-Persistenz (Upstash)
+- [ ] **Upstash Redis** auf Vercel setzen (sonst kein dauerhafter Stand)
 - [ ] PWA auf 3–5 Test-Handys, ~2 Wochen Alltagseinkauf
 - [ ] Feedback sammeln (Einkauf/Vorrat/Heute)
 
 ## P4 — Growth (erst nach positivem Feedback)
-- [ ] Backend (z. B. Supabase/Firebase) + Auth + Haushalt-Sync
+- [ ] Echtes Backend/Auth (über Demo-Login hinaus) + Haushalt-Sync
 - [ ] Stripe-Abo
 - [ ] Partner-Angebotsfeed (Aggregator/Kette), OfferProvider `partner`
 

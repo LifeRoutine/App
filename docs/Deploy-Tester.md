@@ -1,39 +1,56 @@
 # LifeRoutine online für Tester (Vercel)
 
-Damit andere die App **tage-/wochenlang** testen können — ohne deinen PC und ohne WLAN zu Hause.
+Damit andere die App **tage-/wochenlang** testen können — ohne deinen PC.
+
+## Demo-Zugänge (zwei getrennte Haushalte)
+
+Beide in **Hechingen**, Daten **getrennt** auf dem Server:
+
+| Name (Login) | Passwort (Standard) | Haushalt |
+|---|---|---|
+| `irena` | `IrenaDemo26` | eigener Stand |
+| `saskia` | `SaskiaDemo26` | eigener Stand |
+
+Passwörter in Vercel unter Environment Variables ändern (`DEMO_PASS_A` / `DEMO_PASS_B`). Siehe `.env.example`.
+
+## Server-Speicherung (wichtig)
+
+Damit der Stand **dauerhaft** bleibt (nicht nur im Handy-Browser):
+
+1. Kostenloses [Upstash Redis](https://upstash.com) anlegen  
+2. In Vercel setzen: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`  
+3. Optional: `DEMO_SESSION_SECRET` (langes Zufallsgeheimnis)  
+4. Neu deployen  
+
+Ohne Upstash funktioniert Login lokal (Ordner `.data/`) bzw. auf Vercel nur kurz im Speicher — **nicht** für echte Tester.
 
 ## Was passiert?
 
-1. Der Prototyp wird auf **Vercel** gebaut und unter einer **HTTPS-URL** erreichbar (z. B. `https://liferoutine-xxx.vercel.app`).
-2. Tester öffnen den Link im Handy-Browser (Firefox/Chrome/Safari).
-3. Sie tippen **Zum Startbildschirm / Installieren** → Icon wie eine App.
-4. Daten bleiben **auf ihrem Gerät** (`localStorage`). Kein gemeinsames Konto.
-5. Backup: unter Einstellungen **JSON exportieren**.
-
-Dein PC muss dafür **nicht** laufen.
+1. Deploy auf Vercel (Root: `apps/prototype`).  
+2. Tester öffnen die URL → **Anmelden** (irena oder saskia).  
+3. Optional: App aufs Startbildschirm legen.  
+4. Änderungen werden für den jeweiligen Haushalt gespeichert.  
+5. Zusätzlich: Sicherungskopie unter Einstellungen.
 
 ---
 
 ## Voraussetzung
 
 - Konto bei [vercel.com](https://vercel.com) (kostenlos, GitHub-Login empfohlen)
-- Projekt liegt in einem **GitHub-Repo** (oder du deployest per Vercel-CLI)
-
-Aktuell: lokal noch ohne Git-Commit — zuerst einmal committen und nach GitHub pushen.
+- Repo: `LifeRoutine/App`, Root Directory **`apps/prototype`**
 
 ---
 
 ## Weg A — Vercel-Website (empfohlen)
 
-1. Code nach GitHub bringen (neues Repo `LifeRoutine`, push).
-2. [vercel.com/new](https://vercel.com/new) → Repo verbinden.
-3. **Root Directory** setzen auf: `apps/prototype`  
-   (Einstellungen → General → Root Directory, oder im Import-Dialog „Edit“).
-4. Framework: Next.js (auto). Build Command: `npm run build`. Output: Standard.
-5. **Deploy** klicken.
-6. Fertige URL kopieren und an Tester schicken.
+1. Repo verbinden.  
+2. **Root Directory:** `apps/prototype`  
+3. Env-Variablen setzen (Upstash + Demo-Passwörter).  
+4. Deploy.  
+5. URL an Irena / Saskia schicken.
 
-Bei jedem Push auf `main`/`master` baut Vercel neu.
+Bei jedem Push auf `master` baut Vercel neu.
+
 
 ---
 
@@ -66,11 +83,15 @@ Hallo,
 
 bitte öffne auf dem Handy: **https://DEINE-URL.vercel.app**
 
+Anmelden (je eigener Haushalt):
+- Irena → Name `irena` / Passwort `IrenaDemo26`
+- Saskia → Name `saskia` / Passwort `SaskiaDemo26`
+
 - Android Firefox: Menü ⋮ → Installieren / Zum Startbildschirm  
 - Android Chrome: Menü ⋮ → App installieren  
 - iPhone: Safari → Teilen → Zum Home-Bildschirm  
 
-Kurz durchklicken: Heute, Einkauf, Vorräte, Plan, Einstellungen (Backup).  
+Kurz durchklicken: Heute, Einkauf, Vorräte, Plan (Müll), Einstellungen.  
 Feedback gern als Stichpunkte (was nervt / fehlt / unklar).
 
 Danke!

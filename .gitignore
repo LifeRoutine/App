@@ -32,6 +32,7 @@ npm-debug.log*
 # Misc
 *.pem
 .vercel
+.data/
 
 # Cursor: nur Regeln versionieren
 .cursor/*

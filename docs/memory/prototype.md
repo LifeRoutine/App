@@ -18,7 +18,9 @@ Pfad: `C:\LifeRoutine\apps\prototype`
 - UX: Labels alltagstauglich (kein Stub/JSON/Art-Jargon in der Haupt-UI)
 - Heute: Wetter als **Demo** gekennzeichnet
 - PWA: `/manifest.webmanifest`, Icons, `sw.js`, standalone
-- Persistenz: `liferoutine.app.v1` (+ `liferoutine.lock.v1` für PIN); Backup-Format `liferoutine.backup` v1
+- Persistenz: Demo-Login → Server (Redis/`.data`); Cache `liferoutine.app.v1` (+ PIN `liferoutine.lock.v1`); Backup-Format `liferoutine.backup` v1
+- Demo-Zugänge: `irena` / `saskia` (siehe `docs/Deploy-Tester.md`, `.env.example`)
+- Müllkalender: ICS unter Plan → + Termin; Demo Hechingen Landstraße 19 vorbefüllt
 
 ## Farben
 Beruhigend/harmonisch: weiches Blaugrau + Sage (`globals.css`). Bei Bedarf weiter feinjustieren.

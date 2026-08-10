@@ -14,7 +14,14 @@ import type { HouseholdType } from "@/lib/types";
 const types: HouseholdType[] = ["allein", "paar", "familie", "wg"];
 
 export default function EinstellungenPage() {
-  const { state, completeOnboarding, resetDemo } = useApp();
+  const {
+    state,
+    completeOnboarding,
+    resetDemo,
+    demoUser,
+    storageMode,
+    logoutDemo,
+  } = useApp();
   const [name, setName] = useState(state.profile.displayName);
   const [type, setType] = useState(state.profile.householdType);
   const [location, setLocation] = useState(state.profile.location);
@@ -115,6 +122,34 @@ export default function EinstellungenPage() {
         ) : null}
 
         <BackupControls />
+
+        <section className="rounded-2xl border border-line bg-white/80 px-4 py-4">
+          <h2 className="font-display text-lg font-semibold text-ink">
+            Anmeldung
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            {demoUser
+              ? `Angemeldet als ${demoUser.displayName} (${demoUser.username}).`
+              : "Nicht angemeldet."}
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            Speicherung:{" "}
+            {storageMode === "server"
+              ? "Server (dauerhaft)"
+              : storageMode === "local-file"
+                ? "Server-Datei (lokal/Dev)"
+                : storageMode === "memory"
+                  ? "nur kurz (Upstash fehlt)"
+                  : "nur Browser"}
+          </p>
+          <button
+            type="button"
+            onClick={() => void logoutDemo()}
+            className="mt-3 w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm font-semibold text-ink"
+          >
+            Abmelden
+          </button>
+        </section>
 
         <PinSettings />
 

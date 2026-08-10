@@ -54,14 +54,15 @@ Stand: 2026-08-09
 - Quellen an Listenpositionen: Tipp / Scan / Vorrat / Essensplan / LifeAI.
 
 ## Datenschutz (Prototyp)
-- **Lokal zuerst:** App-Stand in `localStorage` (`liferoutine.app.v1`), kein Cloud-Konto.
+- **Demo-Login (2026-08-10):** zwei getrennte Haushalte `irena` / `saskia` (Passwörter per Env). Stand serverseitig (Upstash Redis; lokal `.data/`). Cookie-Session.
+- Zusätzlich Browser-Cache `localStorage` (`liferoutine.app.v1`); PIN lokal.
 - **Keine Werbung / keine Werbeprofile** (Produktprinzip).
 - **Keine Ausweis-/Kartennummern**; Fristen nur Metadaten.
 - Beleg-OCR im Browser; externe Calls nur bei Nutzung (Nominatim, Overpass, Open Food Facts).
-- UI: `/datenschutz` + Link in Einstellungen; Daten löschen = Demo zurücksetzen.
-- **App-PIN (optional):** SHA-256+Salt in `liferoutine.lock.v1`; Session-Unlock; Re-Lock nach ~1 Min. Hintergrund. Geräte-Schutz, kein Server-Auth.
+- UI: `/datenschutz` + Link in Einstellungen; Abmelden unter Einstellungen.
+- **App-PIN (optional):** SHA-256+Salt in `liferoutine.lock.v1`; Session-Unlock; Re-Lock nach ~1 Min. Hintergrund. Geräte-Schutz, kein Ersatz für Demo-Login.
 - **PWA:** Manifest + Service Worker; installierbar aufs Home-Bildschirm (Android-Prompt / iOS Teilen).
-- Spätere Sync/Sharing nur opt-in.
+- Spätere echte Sync/Sharing nur opt-in.
 
 ## Dokumente & Fristen (V1.1)
 - Nur Metadaten: **Typ, Person, Ablauf, Erinnerungsvorlauf**.

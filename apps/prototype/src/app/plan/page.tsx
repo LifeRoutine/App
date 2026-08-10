@@ -232,35 +232,6 @@ export default function PlanPage() {
 
       {tab === "termine" ? (
         <>
-          <section className="mb-3 rounded-2xl border border-dashed border-navy/25 bg-sand/40 px-3 py-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-ink">Müllkalender</p>
-                <p className="text-xs text-muted">
-                  Demo: Hechingen schon drin. Eigene .ics vom Landkreis lädt
-                  neu.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => icsInputRef.current?.click()}
-                className="rounded-xl bg-navy px-3 py-2 text-xs font-semibold text-white"
-              >
-                Kalender laden
-              </button>
-              <input
-                ref={icsInputRef}
-                type="file"
-                accept=".ics,text/calendar"
-                className="hidden"
-                onChange={(e) => void onIcsFile(e.target.files?.[0])}
-              />
-            </div>
-            {icsMsg ? (
-              <p className="mt-2 text-xs font-semibold text-save">{icsMsg}</p>
-            ) : null}
-          </section>
-
           <section className="rounded-2xl border border-line bg-white/80 px-3 py-3">
             <div className="mb-2 flex items-center justify-between gap-2">
               <h2 className="font-display text-base font-semibold text-ink">
@@ -426,6 +397,32 @@ export default function PlanPage() {
 
             {showAdd ? (
               <div className="mt-3 space-y-3 rounded-2xl border border-line bg-white/90 px-4 py-4">
+                <div className="rounded-xl border border-dashed border-navy/20 bg-sand/50 px-3 py-2.5">
+                  <p className="text-xs font-semibold text-ink">Müllkalender</p>
+                  <p className="mt-0.5 text-[0.7rem] text-muted">
+                    Hechingen ist schon im Plan. Eigene .ics vom Landkreis hier
+                    laden.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => icsInputRef.current?.click()}
+                    className="mt-2 rounded-xl bg-navy px-3 py-2 text-xs font-semibold text-white"
+                  >
+                    Kalender laden (.ics)
+                  </button>
+                  <input
+                    ref={icsInputRef}
+                    type="file"
+                    accept=".ics,text/calendar"
+                    className="hidden"
+                    onChange={(e) => void onIcsFile(e.target.files?.[0])}
+                  />
+                  {icsMsg ? (
+                    <p className="mt-2 text-xs font-semibold text-save">
+                      {icsMsg}
+                    </p>
+                  ) : null}
+                </div>
                 <label className="block">
                   <span className="text-xs font-semibold text-muted">Titel</span>
                   <input

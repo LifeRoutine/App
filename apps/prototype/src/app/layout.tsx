@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Manrope } from "next/font/google";
 import { AppProvider } from "@/lib/app-context";
+import { DemoLoginGate } from "@/components/demo-login-gate";
 import { DeviceFrame } from "@/components/device-frame";
 import { OnboardingGate } from "@/components/onboarding-gate";
 import { PinGate } from "@/components/pin-gate";
@@ -62,9 +63,11 @@ export default function RootLayout({
         <PwaRegister />
         <AppProvider>
           <DeviceFrame>
-            <PinGate>
-              <OnboardingGate>{children}</OnboardingGate>
-            </PinGate>
+            <DemoLoginGate>
+              <PinGate>
+                <OnboardingGate>{children}</OnboardingGate>
+              </PinGate>
+            </DemoLoginGate>
           </DeviceFrame>
         </AppProvider>
       </body>

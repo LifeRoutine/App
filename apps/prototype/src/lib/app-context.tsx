@@ -61,8 +61,31 @@ import { makeInviteCode, warnLabelForMonths } from "@/lib/mock-data";
 
 const STORAGE_KEY = "liferoutine.app.v1";
 
+type DemoUser = {
+  username: string;
+  displayName: string;
+  householdId: string;
+};
+
+function modeFromStore(
+  store?: string,
+): "server" | "local-file" | "memory" | "browser" {
+  if (store === "redis") return "server";
+  if (store === "local") return "local-file";
+  if (store === "memory") return "memory";
+  return "browser";
+}
+
 type AppContextValue = {
   ready: boolean;
+  authenticated: boolean;
+  demoUser: DemoUser | null;
+  storageMode: "server" | "local-file" | "memory" | "browser";
+  loginDemo: (
+    username: string,
+    password: string,
+  ) => Promise<{ ok: true } | { ok: false; error: string }>;
+  logoutDemo: () => Promise<void>;
   state: AppState;
   allStores: NearbyStore[];
   preferredStores: NearbyStore[];
@@ -225,16 +248,110 @@ function mergeShopNames(
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>(createDefaultState);
   const [ready, setReady] = useState(false);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [demoUser, setDemoUser] = useState<DemoUser | null>(null);
+  const [storageMode, setStorageMode] = useState<
+    "server" | "local-file" | "memory" | "browser"
+  >("browser");
 
   useEffect(() => {
-    setState(loadState());
-    setReady(true);
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/demo/session", { credentials: "include" });
+        const data = (await res.json()) as {
+          authenticated?: boolean;
+          user?: DemoUser;
+          state?: AppState;
+          store?: string;
+        };
+        if (cancelled) return;
+        if (data.authenticated && data.user && data.state) {
+          setDemoUser(data.user);
+          setState(hydrateAppState(data.state));
+          setAuthenticated(true);
+          setStorageMode(modeFromStore(data.store));
+        } else {
+          setAuthenticated(false);
+          setDemoUser(null);
+        }
+      } catch {
+        if (!cancelled) {
+          setAuthenticated(false);
+          setDemoUser(null);
+        }
+      } finally {
+        if (!cancelled) setReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || !authenticated) return;
     saveState(state);
-  }, [ready, state]);
+    const t = window.setTimeout(() => {
+      void fetch("/api/demo/state", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ state }),
+      }).catch(() => {
+        /* offline — lokal bleibt Cache */
+      });
+    }, 600);
+    return () => window.clearTimeout(t);
+  }, [ready, authenticated, state]);
+
+  const loginDemo = useCallback(async (username: string, password: string) => {
+    try {
+      const res = await fetch("/api/demo/login", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = (await res.json()) as {
+        error?: string;
+        user?: DemoUser;
+        state?: AppState;
+        store?: string;
+      };
+      if (!res.ok || !data.user || !data.state) {
+        return {
+          ok: false as const,
+          error: data.error || "Anmeldung fehlgeschlagen.",
+        };
+      }
+      setDemoUser(data.user);
+      setState(hydrateAppState(data.state));
+      setAuthenticated(true);
+      setStorageMode(modeFromStore(data.store));
+      return { ok: true as const };
+    } catch {
+      return {
+        ok: false as const,
+        error: "Keine Verbindung zum Server.",
+      };
+    }
+  }, []);
+
+  const logoutDemo = useCallback(async () => {
+    try {
+      await fetch("/api/demo/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {
+      /* ignore */
+    }
+    setAuthenticated(false);
+    setDemoUser(null);
+    setState(createDefaultState());
+    setStorageMode("browser");
+  }, []);
 
   const update = useCallback((fn: (prev: AppState) => AppState) => {
     setState(fn);
@@ -1069,9 +1186,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const resetDemo = useCallback(() => {
+    const name = demoUser?.displayName ?? "Irena";
     const fresh = createDefaultState();
     const seeded = {
       ...fresh,
+      profile: {
+        ...fresh.profile,
+        onboardingDone: true,
+        displayName: name,
+        location: "Hechingen",
+      },
+      members: [
+        {
+          id: "m1",
+          name,
+          role: "owner" as const,
+          color: "#4a6f8c",
+        },
+      ],
       userCatalog: ensureNamesInCatalog(fresh.userCatalog, [
         ...fresh.shoppingList.map((i) => i.name),
         ...fresh.pantry.map((p) => p.name),
@@ -1079,7 +1211,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     setState(seeded);
     saveState(seeded);
-  }, []);
+  }, [demoUser?.displayName]);
 
   const importBackup = useCallback((next: AppState) => {
     const hydrated = hydrateAppState(next);
@@ -1089,6 +1221,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const value: AppContextValue = {
     ready,
+    authenticated,
+    demoUser,
+    storageMode,
+    loginDemo,
+    logoutDemo,
     state,
     allStores,
     preferredStores,
