@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
+import { isNameCatalogKey } from "@/lib/catalog-memory";
 import { useApp } from "@/lib/app-context";
 
 export default function KatalogPage() {
@@ -13,31 +14,30 @@ export default function KatalogPage() {
   return (
     <AppShell
       title="Einkauf"
-      subtitle="Haushaltskatalog — wächst mit jedem Scan"
+      subtitle="Bekannte Produkte — aus Liste und Scan"
     >
       <section className="panel-soft animate-rise rounded-3xl px-5 py-5">
-        <p className="panel-kicker text-sm">Gemeinsam aufbauen</p>
+        <p className="panel-kicker text-sm">Immer wieder da</p>
         <p className="mt-1 font-display text-xl font-semibold text-ink">
-          {entries.length} gelernte Produkte
+          {entries.length} gemerkte Produkte
         </p>
         <p className="mt-2 text-sm text-muted">
-          Unbekannte Codes benennst du einmal — danach erkennt LifeRoutine sie
-          sofort. Lookup-Reihenfolge: dein Katalog → Open Food Facts → manuell
-          merken.
+          Was du auf die Liste setzt, merkt sich LifeRoutine im Hintergrund.
+          Beim nächsten Mal tippst du nur noch an — statt neu zu tippen.
         </p>
       </section>
 
       {entries.length === 0 ? (
         <div className="mt-4 rounded-2xl border border-dashed border-line bg-white/60 px-4 py-6 text-center">
           <p className="text-sm text-muted">
-            Noch leer. Unter Liste oder Vorräte scannen/tippen — bei unbekanntem
-            Code den Namen speichern.
+            Noch leer. Unter Liste etwas hinzufügen — dann erscheint es hier und
+            zum Antippen.
           </p>
           <Link
-            href="/einkauf/vorraete"
+            href="/einkauf"
             className="mt-3 inline-block text-sm font-semibold text-save"
           >
-            Zu Vorräten →
+            Zur Einkaufsliste →
           </Link>
         </div>
       ) : (
@@ -51,12 +51,17 @@ export default function KatalogPage() {
                 <div>
                   <p className="font-semibold text-ink">{e.name}</p>
                   <p className="text-xs text-muted">
-                    EAN {e.barcode} · {e.qty} ·{" "}
-                    {e.source === "user"
-                      ? "von dir gelernt"
-                      : e.source === "openfoodfacts"
-                        ? "Open Food Facts"
-                        : "Demo"}
+                    {isNameCatalogKey(e.barcode)
+                      ? "von der Liste"
+                      : `Code ${e.barcode}`}
+                    {" · "}
+                    {e.source === "openfoodfacts"
+                      ? "Open Food Facts"
+                      : e.source === "demo"
+                        ? "Demo"
+                        : e.source === "list"
+                          ? "automatisch gemerkt"
+                          : "von dir"}
                   </p>
                 </div>
                 <button

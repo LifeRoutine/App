@@ -5,6 +5,8 @@ import { AppShell } from "@/components/app-shell";
 import { profileSubtitle, useApp } from "@/lib/app-context";
 import { kindLabel } from "@/lib/mock-data";
 
+const MAX_STEPS = 3;
+
 export default function HeutePage() {
   const {
     state,
@@ -13,7 +15,6 @@ export default function HeutePage() {
     visibleOffersSavings,
     minutesSaved,
     dayInsights,
-    resetDemo,
   } = useApp();
 
   const weekday = new Intl.DateTimeFormat("de-DE", {
@@ -22,24 +23,15 @@ export default function HeutePage() {
     month: "long",
   }).format(new Date());
 
+  const steps = todayPriorities.slice(0, MAX_STEPS);
+  const tip = dayInsights[0];
+
   return (
     <AppShell
       title="Heute"
       subtitle={`${weekday} · ${profileSubtitle(state.profile)}`}
     >
-      <div className="mb-3 flex justify-end gap-3">
-        <Link
-          href="/haushalt"
-          className="text-xs font-semibold text-muted hover:text-ink"
-        >
-          Haushalt
-        </Link>
-        <Link
-          href="/einstellungen#installieren"
-          className="text-xs font-semibold text-muted hover:text-ink"
-        >
-          App installieren
-        </Link>
+      <div className="mb-3 flex justify-end">
         <Link
           href="/einstellungen"
           className="text-xs font-semibold text-muted hover:text-ink"
@@ -47,141 +39,84 @@ export default function HeutePage() {
           Einstellungen
         </Link>
       </div>
-      <section className="hero-heute animate-rise rounded-3xl px-5 py-5">
+
+      <section className="hero-heute animate-rise rounded-2xl px-4 py-4">
         <p className="text-sm text-white/90">
-          Hallo {state.profile.displayName} — weniger organisieren, mehr erledigt
+          Hallo {state.profile.displayName}
         </p>
-        <p className="mt-2 font-display text-[1.55rem] leading-tight font-semibold">
-          {todayPriorities.length} klare Schritte statt langer Listen
+        <p className="mt-1 font-display text-xl font-semibold leading-snug">
+          {steps.length === 0
+            ? "Heute ist nichts Dringendes offen"
+            : `${steps.length} klare Schritte`}
         </p>
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <div className="rounded-2xl bg-white/15 px-3 py-2.5">
-            <p className="text-[0.65rem] uppercase tracking-wide text-white/75">
-              Angebote heute
-            </p>
-            <p className="font-display text-xl font-semibold">
-              {visibleOffersSavings.toFixed(2).replace(".", ",")} €
-            </p>
-          </div>
-          <div className="rounded-2xl bg-white/15 px-3 py-2.5">
-            <p className="text-[0.65rem] uppercase tracking-wide text-white/75">
-              Zeit gespart
-            </p>
-            <p className="font-display text-xl font-semibold">
-              ~{minutesSaved} Min.
-            </p>
-          </div>
-        </div>
         <div className="mt-3 flex flex-wrap gap-2 text-xs">
-          <span className="rounded-full bg-white/20 px-3 py-1">
-            {weather.location}: {weather.tempC} °C, {weather.condition}
-            {weather.source === "demo" ? " · Beispielwetter" : ""}
+          <span className="rounded-lg bg-white/20 px-2.5 py-1.5 font-semibold">
+            {visibleOffersSavings.toFixed(2).replace(".", ",")} € Angebote
+          </span>
+          <span className="rounded-lg bg-white/20 px-2.5 py-1.5 font-semibold">
+            ~{minutesSaved} Min.
+          </span>
+          <span className="rounded-lg bg-white/15 px-2.5 py-1.5 text-white/90">
+            {weather.tempC}° · {weather.condition}
+            {weather.source === "demo" ? " · Demo" : ""}
           </span>
         </div>
       </section>
 
-      {dayInsights.length > 0 ? (
-        <section className="mt-5">
-          <h2 className="font-display text-lg font-semibold text-ink">
-            Hinweise für heute
-          </h2>
-          <p className="mt-1 text-sm text-muted">
-            Was zusammenhängt — kurz und klar.
+      {tip ? (
+        <Link
+          href={tip.href ?? "/"}
+          className="mt-3 block rounded-2xl border border-green/25 bg-mint/50 px-3.5 py-2.5"
+        >
+          <p className="text-[0.7rem] font-semibold tracking-wide text-save uppercase">
+            Hinweis
           </p>
-          <div className="mt-3 space-y-2">
-            {dayInsights.map((insight) => (
-              <Link
-                key={insight.id}
-                href={insight.href ?? "/"}
-                className="block rounded-2xl border border-green/25 bg-mint/60 px-4 py-3"
-              >
-                <p className="text-xs font-semibold tracking-wide text-save uppercase">
-                  {insight.title}
-                </p>
-                <p className="mt-1 text-sm leading-relaxed text-ink">
-                  {insight.detail}
-                </p>
-              </Link>
-            ))}
-          </div>
-        </section>
+          <p className="mt-0.5 text-sm leading-snug text-ink line-clamp-2">
+            {tip.detail}
+          </p>
+        </Link>
       ) : null}
 
-      <section className="mt-5 space-y-3">
+      <section className="mt-4">
         <h2 className="font-display text-lg font-semibold text-ink">
-          Heute priorisiert
+          Als Nächstes
         </h2>
-        {todayPriorities.map((item, index) => {
-          const body = (
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[0.7rem] font-semibold tracking-wide text-green uppercase">
-                  {kindLabel[item.kind]}
-                  {item.meta ? ` · ${item.meta}` : ""}
-                </p>
-                <h3 className="mt-1 font-display text-lg font-semibold text-ink">
-                  {item.title}
-                </h3>
-                <p className="mt-1 text-sm leading-relaxed text-muted">
-                  {item.detail}
-                </p>
-                {item.why ? (
-                  <p className="mt-2 text-xs leading-relaxed text-navy/80">
-                    <span className="font-semibold">Warum: </span>
-                    {item.why}
-                  </p>
-                ) : null}
-              </div>
-              {item.href ? (
-                <span className="shrink-0 rounded-xl bg-mint px-3 py-2 text-xs font-semibold text-ink">
-                  {item.kind === "essen" ? "Anleitung" : "Öffnen"}
-                </span>
-              ) : null}
-            </div>
-          );
-          const className = `block rounded-2xl border border-line bg-white/80 px-4 py-3.5 ${
-            index === 0
-              ? "animate-rise-delay-1"
-              : index === 1
-                ? "animate-rise-delay-2"
-                : "animate-rise-delay-3"
-          }`;
-          return item.href ? (
-            <Link key={item.id} href={item.href} className={className}>
-              {body}
-            </Link>
+        <div className="mt-2 space-y-2">
+          {steps.length === 0 ? (
+            <p className="rounded-2xl border border-dashed border-line bg-white/70 px-4 py-3 text-sm text-muted">
+              Nichts Offenes — gut so.
+            </p>
           ) : (
-            <article key={item.id} className={className}>
-              {body}
-            </article>
-          );
-        })}
-      </section>
-
-      <Link
-        href="/life-ai"
-        className="mt-5 flex items-center justify-between rounded-2xl border border-dashed border-navy/25 bg-white/70 px-4 py-3.5"
-      >
-        <div>
-          <p className="font-display text-lg font-semibold text-ink">
-            Frag den Helfer
-          </p>
-          <p className="text-sm text-muted">
-            Einfach tippen: z. B. „Tomaten kaufen“.
-          </p>
+            steps.map((item) => {
+              const body = (
+                <>
+                  <p className="text-[0.7rem] font-semibold tracking-wide text-green uppercase">
+                    {kindLabel[item.kind]}
+                    {item.meta ? ` · ${item.meta}` : ""}
+                  </p>
+                  <h3 className="mt-0.5 font-display text-base font-semibold text-ink">
+                    {item.title}
+                  </h3>
+                  <p className="mt-0.5 text-sm leading-snug text-muted line-clamp-2">
+                    {item.detail}
+                  </p>
+                </>
+              );
+              const className =
+                "block rounded-2xl border border-line bg-white/85 px-3.5 py-3";
+              return item.href ? (
+                <Link key={item.id} href={item.href} className={className}>
+                  {body}
+                </Link>
+              ) : (
+                <article key={item.id} className={className}>
+                  {body}
+                </article>
+              );
+            })
+          )}
         </div>
-        <span className="mic-pulse grid h-11 w-11 place-items-center rounded-full bg-green text-white">
-          ●
-        </span>
-      </Link>
-
-      <button
-        type="button"
-        onClick={resetDemo}
-        className="mt-6 w-full text-center text-xs text-muted underline"
-      >
-        Demo zurücksetzen
-      </button>
+      </section>
     </AppShell>
   );
 }

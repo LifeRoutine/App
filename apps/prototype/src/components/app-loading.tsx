@@ -7,7 +7,7 @@ export function AppLoading({
   label?: string;
 }) {
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col items-center justify-center px-4 py-8">
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 py-8">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/brand/logo-full.png"

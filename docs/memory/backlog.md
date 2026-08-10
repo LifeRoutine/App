@@ -9,10 +9,12 @@ Stand: 2026-08-09 · inkl. Abgleich Gemini-Empfehlungen
 - [x] Wetter klar als Demo kennzeichnen oder live
 - [x] Märkte-Fallback nur Nominatim-belegt; keine erfundenen Öffnungszeiten
 
-## P2 — Usability LifeAI
-- [ ] Option A: Modul umbenennen („LifeAssist“ / Schnell-Aktionen) — Erwartung ehrlich
-- [ ] Option B später: gezielter Freitext → Liste/Routinen/Termine (API oder lokal)
-- [ ] Bis dahin: keine LLM-Erwartung in der UI versprechen
+## P2 — Usability Helfer
+- [x] Nav/UI: „Helfer“ statt LifeAI; Alltagssprache
+- [ ] Option B später: gezielter Freitext → Liste/Aufgaben/Termine (API oder lokal)
+- [x] Bis dahin: keine LLM-Erwartung in der UI versprechen
+- [x] Termine: „Wer sieht das?“ (Für alle / Nur für mich / Nur mit Partner) statt Art/Routine/Privat
+- [x] Listen-Namen im Hintergrund merken + antippen (Barcode optional — mit Testern klären)
 
 ## P3 — Validierung
 - [x] Online-Deploy (Vercel) für Tester — Anleitung: `docs/Deploy-Tester.md` (Repo `LifeRoutine/App`, Root `apps/prototype`)

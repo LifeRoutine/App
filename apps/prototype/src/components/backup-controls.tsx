@@ -13,7 +13,7 @@ export function BackupControls() {
   function exportNow() {
     setError(null);
     downloadBackupJson(state);
-    setMessage("Backup heruntergeladen.");
+    setMessage("Sicherungskopie gespeichert.");
     window.setTimeout(() => setMessage(null), 3000);
   }
 
@@ -47,11 +47,11 @@ export function BackupControls() {
   return (
     <section className="rounded-2xl border border-line bg-white/80 px-4 py-4">
       <h2 className="font-display text-lg font-semibold text-ink">
-        Backup (JSON)
+        Sicherungskopie
       </h2>
       <p className="mt-1 text-sm text-muted">
-        Export speichert Liste, Vorrat, Plan &amp; Profil lokal als Datei.
-        App-PIN ist nicht enthalten — die bleibt nur auf dem Gerät.
+        Liste, Termine und Vorräte als Datei speichern oder wieder laden.
+        Die PIN bleibt nur auf diesem Gerät.
       </p>
       <div className="mt-3 flex flex-col gap-2 sm:flex-row">
         <button
@@ -59,14 +59,14 @@ export function BackupControls() {
           onClick={exportNow}
           className="flex-1 rounded-2xl bg-green px-4 py-3 text-sm font-semibold text-white"
         >
-          Exportieren
+          Datei speichern
         </button>
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
           className="flex-1 rounded-2xl border border-line bg-white px-4 py-3 text-sm font-semibold text-ink"
         >
-          Importieren
+          Datei laden
         </button>
       </div>
       <input

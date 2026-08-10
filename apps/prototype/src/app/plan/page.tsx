@@ -7,8 +7,8 @@ import { docTypeLabel } from "@/lib/mock-data";
 import {
   addDaysISO,
   eventDateISO,
-  eventKindLabel,
   eventRepeatLabel,
+  eventVisibilityLabel,
   expandEventsForRange,
   formatDayHeading,
   localDateISO,
@@ -21,7 +21,11 @@ const warnOptions = [
   { months: 3, label: "3 Monate vorher" },
   { months: 6, label: "6 Monate vorher" },
 ];
-const kindOptions: PlanEvent["kind"][] = ["termin", "routine", "essen", "privat"];
+const visibilityOptions: NonNullable<PlanEvent["visibility"]>[] = [
+  "shared",
+  "private",
+  "partner",
+];
 
 type PlanTab = "termine" | "fristen";
 
@@ -55,7 +59,8 @@ export default function PlanPage() {
 
   const [evTitle, setEvTitle] = useState("");
   const [evTime, setEvTime] = useState("18:00");
-  const [evKind, setEvKind] = useState<PlanEvent["kind"]>("termin");
+  const [evVisibility, setEvVisibility] =
+    useState<NonNullable<PlanEvent["visibility"]>>("shared");
   const [evDetail, setEvDetail] = useState("");
   const [evRepeat, setEvRepeat] = useState<EventRepeat>("none");
   const [evUntil, setEvUntil] = useState("");
@@ -121,13 +126,15 @@ export default function PlanPage() {
       title: evTitle,
       date: selected,
       time: evTime,
-      kind: evKind,
+      kind: "termin",
       detail: evDetail,
+      visibility: evVisibility,
       repeat: evRepeat,
       repeatUntil: evRepeat === "none" ? undefined : evUntil || undefined,
     });
     setEvTitle("");
     setEvDetail("");
+    setEvVisibility("shared");
     setEvRepeat("none");
     setEvUntil("");
     setShowAdd(false);
@@ -360,17 +367,21 @@ export default function PlanPage() {
                     />
                   </label>
                   <label className="block">
-                    <span className="text-xs font-semibold text-muted">Art</span>
+                    <span className="text-xs font-semibold text-muted">
+                      Wer sieht das?
+                    </span>
                     <select
-                      value={evKind}
+                      value={evVisibility}
                       onChange={(e) =>
-                        setEvKind(e.target.value as PlanEvent["kind"])
+                        setEvVisibility(
+                          e.target.value as NonNullable<PlanEvent["visibility"]>,
+                        )
                       }
                       className="mt-1 w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm"
                     >
-                      {kindOptions.map((k) => (
-                        <option key={k} value={k}>
-                          {eventKindLabel[k]}
+                      {visibilityOptions.map((v) => (
+                        <option key={v} value={v}>
+                          {eventVisibilityLabel[v]}
                         </option>
                       ))}
                     </select>
@@ -453,7 +464,7 @@ export default function PlanPage() {
                           <p className="mt-1 text-sm text-muted">{ev.detail}</p>
                         ) : null}
                         <p className="mt-1 text-[0.65rem] font-semibold uppercase tracking-wide text-green">
-                          {eventKindLabel[ev.kind]}
+                          {eventVisibilityLabel[ev.visibility ?? "shared"]}
                           {ev.repeat && ev.repeat !== "none"
                             ? ` · ${eventRepeatLabel[ev.repeat]}`
                             : ""}

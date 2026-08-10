@@ -228,7 +228,7 @@ export default function MaerktePage() {
         href="/einkauf/angebote"
         className="mt-6 block rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm font-semibold text-ink"
       >
-        Angebote-Datenquellen (Stub) →
+        Woher kommen die Angebote? →
       </Link>
     </AppShell>
   );

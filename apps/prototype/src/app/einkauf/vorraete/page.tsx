@@ -27,7 +27,7 @@ export default function VorraetePage() {
   const lowOrEmpty = state.pantry.filter((p) => p.status !== "ok");
 
   return (
-    <AppShell title="Einkauf" subtitle="Vorräte — ohne Inventur-Zwang">
+    <AppShell title="Einkauf" subtitle="Was noch da ist — und was fehlt">
       <section className="panel-soft animate-rise rounded-3xl px-5 py-5">
         <p className="panel-kicker text-sm">So gibst du Vorrat an</p>
         <p className="mt-1 font-display text-xl font-semibold text-ink">

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CatalogProduct } from "@/lib/barcode-catalog";
+import { filterCatalogNames } from "@/lib/catalog-memory";
 import { useApp } from "@/lib/app-context";
 
 type Props = {
@@ -23,7 +24,7 @@ async function lookupRemote(code: string): Promise<CatalogProduct | null> {
 
 export function ProductCapture({ title = "Produkt erfassen", onProduct }: Props) {
   const { state, lookupUserCatalog, teachCatalog } = useApp();
-  const [open, setOpen] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
   const [name, setName] = useState("");
   const [ean, setEan] = useState("");
   const [pendingCode, setPendingCode] = useState<string | null>(null);
@@ -33,6 +34,11 @@ export function ProductCapture({ title = "Produkt erfassen", onProduct }: Props)
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<number | null>(null);
+
+  const suggestions = useMemo(
+    () => filterCatalogNames(state.userCatalog, name, 8),
+    [state.userCatalog, name],
+  );
 
   function stopCamera() {
     if (timerRef.current) {
@@ -62,6 +68,12 @@ export function ProductCapture({ title = "Produkt erfassen", onProduct }: Props)
     onProduct({ ...product, source });
   }
 
+  function pickKnown(knownName: string) {
+    onProduct({ barcode: "", name: knownName, qty: "1×", source: "manual" });
+    setName("");
+    setMessage(`„${knownName}“ hinzugefügt`);
+  }
+
   async function resolveAndAdd(code: string) {
     const normalized = code.replace(/\s/g, "");
     setLookingUp(true);
@@ -72,7 +84,7 @@ export function ProductCapture({ title = "Produkt erfassen", onProduct }: Props)
         acceptProduct(
           { barcode: learned.barcode, name: learned.name, qty: learned.qty },
           "scan",
-          learned.source,
+          learned.source === "list" ? "user" : learned.source,
         );
         setMessage(`Aus deinem Katalog: ${learned.name}`);
         setEan("");
@@ -83,8 +95,9 @@ export function ProductCapture({ title = "Produkt erfassen", onProduct }: Props)
       const hit = await lookupRemote(normalized);
       if (!hit) {
         setPendingCode(normalized);
+        setScanOpen(true);
         setMessage(
-          `Unbekannt (${normalized}). Name tippen — speichern wir in deinem Haushaltskatalog.`,
+          `Unbekannt (${normalized}). Name tippen — speichern wir fürs nächste Mal.`,
         );
         return;
       }
@@ -94,7 +107,8 @@ export function ProductCapture({ title = "Produkt erfassen", onProduct }: Props)
       setPendingCode(null);
     } catch {
       setPendingCode(normalized);
-      setMessage("Lookup offline/fehlerhaft — Name tippen und merken.");
+      setScanOpen(true);
+      setMessage("Nachschlagen fehlgeschlagen — Name tippen und merken.");
     } finally {
       setLookingUp(false);
     }
@@ -111,7 +125,7 @@ export function ProductCapture({ title = "Produkt erfassen", onProduct }: Props)
         "manual",
         "user",
       );
-      setMessage(`Gemerkt: ${trimmed} ↔ ${pendingCode}`);
+      setMessage(`Gemerkt: ${trimmed}`);
       setPendingCode(null);
       setName("");
       setEan("");
@@ -120,7 +134,7 @@ export function ProductCapture({ title = "Produkt erfassen", onProduct }: Props)
 
     onProduct({ barcode: "", name: trimmed, qty: "1×", source: "manual" });
     setName("");
-    setMessage(`„${trimmed}“ hinzugefügt`);
+    setMessage(`„${trimmed}“ hinzugefügt · wird fürs nächste Mal gemerkt`);
   }
 
   function submitEan(e: React.FormEvent) {
@@ -140,8 +154,9 @@ export function ProductCapture({ title = "Produkt erfassen", onProduct }: Props)
 
     if (!Detector) {
       setMessage(
-        "Kamera-Barcode hier nicht unterstützt — EAN tippen oder Demo-Scan.",
+        "Kamera-Barcode hier nicht unterstützt — Code tippen oder Demo-Scan.",
       );
+      setScanOpen(true);
       return;
     }
 
@@ -152,7 +167,7 @@ export function ProductCapture({ title = "Produkt erfassen", onProduct }: Props)
       });
       streamRef.current = stream;
       setScanning(true);
-      setOpen(true);
+      setScanOpen(true);
       await new Promise((r) => window.setTimeout(r, 50));
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -177,8 +192,9 @@ export function ProductCapture({ title = "Produkt erfassen", onProduct }: Props)
         }
       }, 700);
     } catch {
-      setMessage("Kamerazugriff nicht möglich — EAN tippen oder Demo-Scan.");
+      setMessage("Kamerazugriff nicht möglich — Code tippen oder Demo-Scan.");
       stopCamera();
+      setScanOpen(true);
     }
   }
 
@@ -188,84 +204,75 @@ export function ProductCapture({ title = "Produkt erfassen", onProduct }: Props)
         <div>
           <p className="font-display text-base font-semibold text-ink">{title}</p>
           <p className="text-[0.65rem] text-muted">
-            Dein Katalog: {state.userCatalog.length} Produkte
+            {state.userCatalog.length > 0
+              ? `${state.userCatalog.length} bekannte Produkte — antippen oder tippen`
+              : "Name tippen — wird automatisch gemerkt"}
           </p>
         </div>
         <button
           type="button"
           onClick={() => {
-            setOpen((v) => !v);
-            if (open) stopCamera();
+            setScanOpen((v) => !v);
+            if (scanOpen) stopCamera();
           }}
           className="text-xs font-semibold text-save"
         >
-          {open ? "Schließen" : "Erweitern"}
+          {scanOpen ? "Barcode zu" : "Barcode"}
         </button>
       </div>
 
-      {!open ? (
-        <div className="mt-2 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className="rounded-xl bg-mint px-3 py-2 text-xs font-semibold text-ink"
-          >
-            Name tippen
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(true);
-              void startCameraScan();
-            }}
-            className="rounded-xl bg-green px-3 py-2 text-xs font-semibold text-white"
-          >
-            Barcode scannen
-          </button>
-          <button
-            type="button"
-            onClick={() => void resolveAndAdd("4008400402623")}
-            className="rounded-xl border border-line bg-white px-3 py-2 text-xs font-semibold text-ink"
-          >
-            Demo-Scan
-          </button>
+      <form onSubmit={submitName} className="mt-3 flex gap-2">
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder={
+            pendingCode ? "Name für diesen Code…" : "z. B. Hafermilch"
+          }
+          className="flex-1 rounded-xl border border-line bg-white px-3 py-2.5 text-sm outline-none ring-green/30 focus:ring-2"
+          autoComplete="off"
+        />
+        <button
+          type="submit"
+          className="rounded-xl bg-green px-3 py-2 text-xs font-semibold text-white"
+        >
+          {pendingCode ? "Merken" : "OK"}
+        </button>
+      </form>
+
+      {pendingCode ? (
+        <div className="mt-2 rounded-xl border border-warn/30 bg-warn/10 px-3 py-2 text-xs text-ink">
+          Code <strong>{pendingCode}</strong> unbekannt — Name eingeben und
+          speichern.
         </div>
-      ) : (
-        <div className="mt-3 space-y-3">
-          <p className="text-xs text-muted">
-            Reihenfolge: dein Katalog → Open Food Facts → wenn unbekannt: du
-            benennst es, LifeRoutine merkt sich den Code.
+      ) : null}
+
+      {suggestions.length > 0 ? (
+        <div className="mt-2">
+          <p className="mb-1.5 text-[0.65rem] font-semibold uppercase tracking-wide text-muted">
+            {name.trim() ? "Treffer" : "Bekannt — antippen"}
           </p>
+          <div className="flex flex-wrap gap-1.5">
+            {suggestions.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => pickKnown(s)}
+                className="rounded-full border border-line bg-sand/80 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-mint"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
-          {pendingCode ? (
-            <div className="rounded-xl border border-warn/30 bg-warn/10 px-3 py-2 text-xs text-ink">
-              Code <strong>{pendingCode}</strong> unbekannt — Name eingeben und
-              speichern.
-            </div>
-          ) : null}
-
-          <form onSubmit={submitName} className="flex gap-2">
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={
-                pendingCode ? "Name für diesen Code…" : "z. B. Hafermilch"
-              }
-              className="flex-1 rounded-xl border border-line bg-white px-3 py-2 text-sm outline-none ring-green/30 focus:ring-2"
-            />
-            <button
-              type="submit"
-              className="rounded-xl bg-green px-3 py-2 text-xs font-semibold text-white"
-            >
-              {pendingCode ? "Merken" : "OK"}
-            </button>
-          </form>
-
+      {scanOpen ? (
+        <div className="mt-3 space-y-3 border-t border-line pt-3">
           <form onSubmit={submitEan} className="flex gap-2">
             <input
               value={ean}
               onChange={(e) => setEan(e.target.value)}
-              placeholder="EAN tippen → Lookup"
+              placeholder="Barcode tippen"
               inputMode="numeric"
               className="flex-1 rounded-xl border border-line bg-white px-3 py-2 text-sm outline-none ring-green/30 focus:ring-2"
             />
@@ -274,7 +281,7 @@ export function ProductCapture({ title = "Produkt erfassen", onProduct }: Props)
               disabled={lookingUp}
               className="rounded-xl bg-navy px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
             >
-              {lookingUp ? "…" : "Lookup"}
+              {lookingUp ? "…" : "OK"}
             </button>
           </form>
 
@@ -313,7 +320,7 @@ export function ProductCapture({ title = "Produkt erfassen", onProduct }: Props)
             />
           ) : null}
         </div>
-      )}
+      ) : null}
 
       {message ? (
         <p className="mt-2 text-xs font-semibold text-save">{message}</p>

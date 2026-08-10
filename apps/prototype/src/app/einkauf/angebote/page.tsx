@@ -43,15 +43,15 @@ const sources = [
 
 export default function AngeboteStubPage() {
   return (
-    <AppShell title="Angebote" subtitle="Datenquellen — Stub & Recherche">
+    <AppShell title="Angebote" subtitle="Woher Preise kommen können">
       <section className="rounded-2xl border border-line bg-white/80 px-4 py-4">
         <h2 className="font-display text-lg font-semibold text-ink">
-          Was wir brauchen
+          Kurz erklärt
         </h2>
         <p className="mt-2 text-sm text-muted">
-          Sichtbare €-Ersparnis braucht verlässliche Angebotsdaten pro Filiale
-          und Zeitraum. Märkte (OSM) sind getrennt von Preisen — die kommen
-          später über Partner, Aggregatoren oder eigene Belege.
+          Damit du Ersparnis siehst, brauchen wir echte Angebote vom Markt — nicht
+          geratene Preise. Märkte (Adresse) und Preise sind getrennt. Preise kommen
+          später über Händler, Prospekte oder deine eigenen Belege.
         </p>
       </section>
 
@@ -78,9 +78,8 @@ export default function AngeboteStubPage() {
           Nächster Schritt
         </h2>
         <p className="mt-2 text-sm text-muted">
-          Technisch + rechtlich 1–2 Quellen kurzlisten, Pilot mit Demo-Ort
-          (z.&nbsp;B. Hechingen), Angebote an preferredStoreIds koppeln — UI ist
-          schon bereit.
+          Als Nächstes: ein bis zwei saubere Quellen aussuchen und an deinen Ort
+          und deine gewählten Märkte koppeln. Die Oberfläche dafür ist schon da.
         </p>
       </section>
     </AppShell>

@@ -41,6 +41,7 @@ import type {
 } from "@/lib/types";
 import { resolveOffer } from "@/lib/offers";
 import { formatSave } from "@/lib/offers/types";
+import { ensureNamesInCatalog, rememberInCatalog } from "@/lib/catalog-memory";
 import {
   estimateFromAmount,
   guessDefaultMin,
@@ -147,6 +148,7 @@ type AppContextValue = {
     time: string;
     kind?: PlanEvent["kind"];
     detail?: string;
+    visibility?: PlanEvent["visibility"];
     repeat?: PlanEvent["repeat"];
     repeatUntil?: string;
   }) => void;
@@ -167,7 +169,16 @@ function loadState(): AppState {
   if (typeof window === "undefined") return createDefaultState();
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return createDefaultState();
+    if (!raw) {
+      const fresh = createDefaultState();
+      return {
+        ...fresh,
+        userCatalog: ensureNamesInCatalog(fresh.userCatalog, [
+          ...fresh.shoppingList.map((i) => i.name),
+          ...fresh.pantry.map((p) => p.name),
+        ]),
+      };
+    }
     return hydrateAppState(JSON.parse(raw));
   } catch {
     return createDefaultState();
@@ -367,7 +378,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
     }
 
-    return list.slice(0, 6);
+    return list.slice(0, 4);
   }, [state, allStores]);
 
   const minutesSaved = useMemo(() => estimateMinutesSaved(state), [state]);
@@ -430,6 +441,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       update((prev) => ({
         ...prev,
         shoppingList: mergeShopNames(prev.shoppingList, names, meta),
+        userCatalog: rememberInCatalog(prev.userCatalog, names, {
+          barcode: meta?.barcode,
+          qty: meta?.qty,
+          source: meta?.barcode ? "user" : "list",
+        }),
       }));
     },
     [update],
@@ -564,17 +580,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }) => {
       const barcode = input.barcode.replace(/\s/g, "");
       if (!barcode || !input.name.trim()) return;
-      update((prev) => {
-        const rest = prev.userCatalog.filter((e) => e.barcode !== barcode);
-        const entry: UserCatalogEntry = {
+      update((prev) => ({
+        ...prev,
+        userCatalog: rememberInCatalog(prev.userCatalog, [input.name], {
           barcode,
-          name: input.name.trim(),
-          qty: input.qty?.trim() || "1×",
-          learnedAt: new Date().toISOString(),
+          qty: input.qty,
           source: input.source ?? "user",
-        };
-        return { ...prev, userCatalog: [entry, ...rest] };
-      });
+        }),
+      }));
     },
     [update],
   );
@@ -916,6 +929,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       time: string;
       kind?: PlanEvent["kind"];
       detail?: string;
+      visibility?: PlanEvent["visibility"];
       repeat?: PlanEvent["repeat"];
       repeatUntil?: string;
     }) => {
@@ -923,7 +937,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (!title || !input.date) return;
       const today = localDateISO();
       const repeat = input.repeat ?? "none";
-      const baseDetail = input.detail?.trim() || "Selbst eingetragen.";
+      const baseDetail = input.detail?.trim() || "";
+      const visibility = input.visibility ?? "shared";
+      const kind = input.kind ?? "termin";
 
       if (repeat === "none") {
         const ev = normalizePlanEvent(
@@ -933,9 +949,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             time: input.time || "12:00",
             date: input.date,
             dayOffset: dayOffsetFromDate(input.date, today),
-            kind: input.kind ?? "termin",
-            detail: baseDetail,
-            visibility: "shared",
+            kind,
+            detail: baseDetail || "Selbst eingetragen.",
+            visibility,
             repeat: "none",
           },
           today,
@@ -955,9 +971,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           time: input.time || "12:00",
           date: input.date,
           dayOffset: dayOffsetFromDate(input.date, today),
-          kind: input.kind ?? "termin",
-          detail: baseDetail,
-          visibility: "shared",
+          kind,
+          detail: baseDetail || "Selbst eingetragen.",
+          visibility,
           seriesId,
           seriesMaster: true,
           repeat,
@@ -1035,8 +1051,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const resetDemo = useCallback(() => {
     const fresh = createDefaultState();
-    setState(fresh);
-    saveState(fresh);
+    const seeded = {
+      ...fresh,
+      userCatalog: ensureNamesInCatalog(fresh.userCatalog, [
+        ...fresh.shoppingList.map((i) => i.name),
+        ...fresh.pantry.map((p) => p.name),
+      ]),
+    };
+    setState(seeded);
+    saveState(seeded);
   }, []);
 
   const importBackup = useCallback((next: AppState) => {

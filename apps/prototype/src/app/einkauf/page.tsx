@@ -50,7 +50,8 @@ export default function EinkaufPage() {
       <section className="mt-4 rounded-2xl border border-line bg-white/80 px-4 py-3">
         <p className="text-sm font-semibold text-ink">Liste erweitern so:</p>
         <p className="mt-1 text-xs text-muted">
-          Tippen · Barcode · Vorräte · Essen · Helfer
+          Tippen · bekannte Produkte antippen · Barcode · Vorräte · Essen ·
+          Helfer
         </p>
         <p className="mt-1 text-xs text-muted">
           Beleg nach dem Einkauf: unter{" "}
@@ -208,8 +209,8 @@ export default function EinkaufPage() {
                     className="mt-1 text-[0.65rem] font-semibold text-navy underline"
                   >
                     {(item.visibility ?? "shared") === "private"
-                      ? "Privat · tippen → geteilt"
-                      : "Geteilt · tippen → privat"}
+                      ? "Nur ich · tippen → für alle"
+                      : "Für alle · tippen → nur ich"}
                   </button>
                   {offerVisible && offer ? (
                     <div className="mt-2 rounded-xl bg-sand/80 px-3 py-2.5">

@@ -45,8 +45,8 @@ export default function HaushaltPage() {
     const ok = joinWithInvite(joinCode, joinName);
     setJoinMsg(
       ok
-        ? "Beigetreten (Demo: gleicher Browser / gleicher Haushalt)."
-        : "Code ungültig — prüfe den Einladungs-Code.",
+        ? "Fertig — Person ist im Haushalt (Test auf diesem Gerät)."
+        : "Code stimmt nicht — bitte nochmal prüfen.",
     );
     if (ok) {
       setJoinCode("");
@@ -55,14 +55,15 @@ export default function HaushaltPage() {
   }
 
   return (
-    <AppShell title="Haushalt" subtitle="Mitglieder · Einladen · privat/geteilt">
+    <AppShell title="Haushalt" subtitle="Wer gehört dazu — und wer sieht was">
       <section className="hero-heute animate-rise rounded-3xl px-5 py-5">
-        <p className="text-sm text-white/90">Einladungs-Code</p>
+        <p className="text-sm text-white/90">Code zum Einladen</p>
         <p className="mt-1 font-display text-3xl font-semibold tracking-wide">
           {state.profile.inviteCode}
         </p>
         <p className="mt-2 text-sm text-white/85">
-          Demo: Code teilen → Partner tippt ihn hier ein. Später echte Sync.
+          Code an Partner schicken. Später klappt das Gerät-übergreifend — jetzt
+          noch Test auf demselben Handy/Browser.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <button
@@ -143,7 +144,7 @@ export default function HaushaltPage() {
           Mit Code beitreten
         </h2>
         <p className="mt-1 text-sm text-muted">
-          Demo-Simulation im gleichen Gerät — kein Cloud-Sync.
+          Test auf diesem Gerät — später auch zwischen Handys.
         </p>
         <input
           value={joinCode}
@@ -171,12 +172,12 @@ export default function HaushaltPage() {
 
       <section className="mt-6 rounded-2xl border border-dashed border-navy/25 bg-sand/50 px-4 py-4">
         <h2 className="font-display text-lg font-semibold text-ink">
-          Privat vs. geteilt
+          Wer sieht was?
         </h2>
         <p className="mt-2 text-sm text-muted">
-          Auf der Einkaufsliste kannst du Einträge auf{" "}
-          <strong>privat</strong> stellen — nur du siehst sie. Standard ist{" "}
-          <strong>geteilt</strong> mit dem Haushalt.
+          Auf der Einkaufsliste und bei Terminen kannst du wählen:{" "}
+          <strong>Für alle</strong>, <strong>Nur für mich</strong> oder bei
+          Terminen <strong>Nur mit Partner</strong>. Standard: für alle.
         </p>
       </section>
     </AppShell>

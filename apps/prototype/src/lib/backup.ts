@@ -1,4 +1,5 @@
 import { createDefaultState } from "@/lib/mock-data";
+import { ensureNamesInCatalog } from "@/lib/catalog-memory";
 import { normalizePantryItem } from "@/lib/pantry";
 import { localDateISO, normalizePlanEvent } from "@/lib/plan-dates";
 import type { AppState } from "@/lib/types";
@@ -19,7 +20,7 @@ export function hydrateAppState(raw: unknown): AppState {
   if (!raw || typeof raw !== "object") return fallback;
   const parsed = raw as Partial<AppState>;
   if (!parsed.profile || typeof parsed.profile !== "object") return fallback;
-  return {
+  const next: AppState = {
     ...fallback,
     ...parsed,
     profile: {
@@ -38,6 +39,16 @@ export function hydrateAppState(raw: unknown): AppState {
     mealPlan: parsed.mealPlan ?? fallback.mealPlan,
     userCatalog: parsed.userCatalog ?? fallback.userCatalog,
     discoveredStores: parsed.discoveredStores ?? fallback.discoveredStores,
+  };
+
+  // Bestehende Listen-/Vorratsnamen in den Katalog übernehmen (Auswahl ohne Tippen)
+  const seedNames = [
+    ...next.shoppingList.map((i) => i.name),
+    ...next.pantry.map((p) => p.name),
+  ];
+  return {
+    ...next,
+    userCatalog: ensureNamesInCatalog(next.userCatalog, seedNames),
   };
 }
 

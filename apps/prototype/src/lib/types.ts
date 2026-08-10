@@ -75,7 +75,11 @@ export type PlanEvent = {
   dayOffset: number;
   kind: "termin" | "routine" | "essen" | "privat";
   detail: string;
-  visibility?: "shared" | "private";
+  /**
+   * Wer sieht den Termin:
+   * shared = für alle, private = nur ich, partner = nur mit Partner
+   */
+  visibility?: "shared" | "private" | "partner";
   /** Gleiche Serie bei Wiederholung */
   seriesId?: string;
   /** true = Serien-Regel (wird für Anzeige expandiert, unbegrenzt bis beendet) */
@@ -120,11 +124,16 @@ export type PantryItem = {
 };
 
 export type UserCatalogEntry = {
+  /**
+   * EAN/Barcode — oder `name:…` für reine Tippeinträge von der Liste
+   * (siehe `nameCatalogKey` in catalog-memory).
+   */
   barcode: string;
   name: string;
   qty: string;
   learnedAt: string;
-  source: "user" | "openfoodfacts" | "demo";
+  /** list = von der Einkaufsliste im Hintergrund gemerkt */
+  source: "user" | "openfoodfacts" | "demo" | "list";
 };
 
 export type MealPlanDay = {

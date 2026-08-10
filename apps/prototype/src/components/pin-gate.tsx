@@ -77,7 +77,7 @@ export function PinGate({ children }: { children: React.ReactNode }) {
 
   if (needsPin) {
     return (
-      <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col justify-center px-4 py-8">
+      <div className="flex min-h-0 flex-1 flex-col justify-center px-4 py-8">
         <BrandWordmark compact />
         <section className="mt-8 rounded-3xl border border-line bg-white/90 px-5 py-6 shadow-sm">
           <h1 className="font-display text-2xl font-semibold text-ink">
@@ -118,5 +118,5 @@ export function PinGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  return <div className="flex min-h-0 flex-1 flex-col">{children}</div>;
 }

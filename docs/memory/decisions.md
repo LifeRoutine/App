@@ -22,6 +22,12 @@ Stand: 2026-08-09
 - Kurze Alltagssprache, kein Entwickler-/Produkt-Jargon.
 - Eine Handlung = klarer Button; Beispiele in Platzhaltern; wenig scrollen.
 
+## Termin-Sichtbarkeit (nicht „Art“)
+- Formular-Feld **„Wer sieht das?“** statt Art/Routine/Privat.
+- Werte: `shared` = Für alle · `private` = Nur für mich · `partner` = Nur mit Partner.
+- Default `kind: termin`; Sichtbarkeit ≠ Zuhause-Aufgaben.
+- Partner-Filter echt erst mit Rollen/Sync; Prototyp speichert und zeigt Label.
+
 ## Informationsarchitektur (5 Bereiche)
 - **Heute** · **Einkauf** · **Zuhause** · **Plan** · **Helfer** (Route /life-ai)
 - LifeAI ist verbindende Schicht, kein separater Chatbot.

@@ -92,12 +92,12 @@ export default function DatenschutzPage() {
 
       <section className="mt-4 rounded-2xl border border-line bg-white/80 px-4 py-4">
         <h2 className="font-display text-lg font-semibold text-ink">
-          Backup
+          Sicherungskopie
         </h2>
         <p className="mt-2 text-sm text-muted">
-          Unter Einstellungen kannst du den App-Stand als JSON exportieren und
-          wieder importieren. Die Datei bleibt bei dir — kein Upload an uns.
-          Die optionale App-PIN steckt nicht im Backup.
+          Unter Einstellungen kannst du Liste, Termine und Vorräte als Datei
+          speichern und wieder laden. Die Datei bleibt bei dir — kein Upload an
+          uns. Die optionale App-PIN steckt nicht in der Datei.
         </p>
       </section>
 
@@ -106,16 +106,16 @@ export default function DatenschutzPage() {
           Daten löschen
         </h2>
         <p className="mt-2 text-sm text-muted">
-          Demo zurücksetzen löscht den lokalen App-Stand und startet das
-          Onboarding neu. Vorher ggf. JSON-Backup exportieren. Du kannst auch
-          den Site-Speicher im Browser leeren.
+          „Alles zurücksetzen“ löscht den Stand auf diesem Gerät und startet neu.
+          Vorher ggf. eine Sicherungskopie speichern. Du kannst auch den
+          Website-Speicher im Browser leeren.
         </p>
         <button
           type="button"
           onClick={resetDemo}
           className="mt-3 w-full rounded-2xl bg-navy px-4 py-3 text-sm font-semibold text-white"
         >
-          Alle lokalen Demo-Daten löschen
+          Alles auf diesem Gerät löschen
         </button>
       </section>
 

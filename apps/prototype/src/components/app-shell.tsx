@@ -42,16 +42,16 @@ export function AppShell({
   const onEinkauf = pathname.startsWith("/einkauf");
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col">
-      <header className="sticky top-0 z-20 border-b border-line bg-[color:var(--surface)]/92 px-4 pb-3 pt-[max(0.85rem,env(safe-area-inset-top))] backdrop-blur-md">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <header className="sticky top-0 z-20 shrink-0 border-b border-line bg-[color:var(--surface)]/95 px-4 pb-3 pt-[max(0.7rem,env(safe-area-inset-top))] backdrop-blur-md">
         <BrandWordmark compact />
         {title ? (
-          <div className="mt-2 text-center">
-            <h1 className="font-display text-2xl font-semibold tracking-tight text-ink">
+          <div className="mt-1.5 text-center">
+            <h1 className="font-display text-xl font-semibold tracking-tight text-ink">
               {title}
             </h1>
             {subtitle ? (
-              <p className="mt-1 text-sm text-muted">{subtitle}</p>
+              <p className="mt-0.5 text-xs text-muted">{subtitle}</p>
             ) : null}
           </div>
         ) : null}
@@ -80,7 +80,7 @@ export function AppShell({
           </nav>
         ) : null}
       </header>
-      <main className="flex-1 px-4 py-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+      <main className="min-h-0 flex-1 overflow-y-auto px-4 py-3 pb-3">
         {children}
       </main>
       <BottomNav />

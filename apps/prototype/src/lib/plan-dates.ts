@@ -59,6 +59,15 @@ export const eventKindLabel: Record<PlanEvent["kind"], string> = {
   privat: "Privat",
 };
 
+export const eventVisibilityLabel: Record<
+  NonNullable<PlanEvent["visibility"]>,
+  string
+> = {
+  shared: "Für alle",
+  private: "Nur für mich",
+  partner: "Nur mit Partner",
+};
+
 export const eventRepeatLabel: Record<EventRepeat, string> = {
   none: "Nur einmal",
   weekly: "Jede Woche",

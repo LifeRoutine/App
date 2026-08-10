@@ -136,7 +136,7 @@ export default function LifeAiPage() {
       return {
         user: raw,
         assistant:
-          "Schau unter Heute: Termine, offene Routinen und ggf. Spar-Tipps. Wenige Prioritäten statt langer Listen.",
+          "Schau unter Heute: Termine, offene Aufgaben und ggf. Spar-Tipps — wenige Schritte statt langer Listen.",
         action: { label: "Heute öffnen", href: "/" },
       };
     }

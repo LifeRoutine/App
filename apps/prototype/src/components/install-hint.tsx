@@ -82,8 +82,8 @@ export function InstallHint() {
         App aufs Handy
       </h2>
       <p className="mt-1 text-sm text-muted">
-        Ohne App Store — auf dem Startbildschirm. PC und Handy im gleichen WLAN;
-        Dev-Server muss laufen.
+        Einmal auf den Startbildschirm legen — dann öffnest du LifeRoutine wie
+        eine normale App. Am besten über den Online-Link (HTTPS).
       </p>
 
       {origin ? (

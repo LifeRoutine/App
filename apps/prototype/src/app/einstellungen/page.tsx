@@ -60,7 +60,7 @@ export default function EinstellungenPage() {
   }
 
   return (
-    <AppShell title="Einstellungen" subtitle="Haushalt & Ort">
+    <AppShell title="Einstellungen" subtitle="Name, Ort, App aufs Handy">
       <section className="space-y-4">
         <InstallHint />
 
@@ -122,25 +122,25 @@ export default function EinstellungenPage() {
           href="/haushalt"
           className="block rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm font-semibold text-ink"
         >
-          Haushalt & Einladen ({state.members.length}) →
+          Haushalt: wer wohnt mit? ({state.members.length}) →
         </Link>
         <Link
           href="/einkauf/maerkte"
           className="block rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm font-semibold text-ink"
         >
-          Märkte in der Nähe verwalten →
+          Meine Märkte wählen →
         </Link>
         <Link
           href="/einkauf/angebote"
           className="block rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm font-semibold text-ink"
         >
-          Angebote-Datenquellen (Stub) →
+          Angebote (Infos) →
         </Link>
         <Link
           href="/einkauf/katalog"
           className="block rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm font-semibold text-ink"
         >
-          Haushaltskatalog ({state.userCatalog.length}) →
+          Gespeicherte Produkte ({state.userCatalog.length}) →
         </Link>
 
         <Link
@@ -155,7 +155,7 @@ export default function EinstellungenPage() {
           onClick={resetDemo}
           className="w-full text-center text-xs text-muted underline"
         >
-          Demo zurücksetzen (Onboarding erneut)
+          Alles zurücksetzen und neu starten
         </button>
       </section>
     </AppShell>

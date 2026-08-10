@@ -17,9 +17,9 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Hauptbereiche"
-      className="sticky bottom-0 z-20 border-t border-line bg-[color:var(--surface)]/92 px-2 pb-[max(0.55rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md"
+      className="z-20 shrink-0 border-t border-line bg-[color:var(--surface)]/95 px-2 pb-[max(0.55rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md"
     >
-      <ul className="mx-auto grid max-w-lg grid-cols-5 gap-1">
+      <ul className="grid grid-cols-5 gap-1">
         {items.map((item) => {
           const active =
             item.href === "/"

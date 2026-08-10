@@ -29,5 +29,5 @@ export function OnboardingGate({ children }: { children: React.ReactNode }) {
     return <AppLoading label="Weiterleitung zum Start…" />;
   }
 
-  return <>{children}</>;
+  return <div className="flex min-h-0 flex-1 flex-col">{children}</div>;
 }
