@@ -59,7 +59,10 @@ export type Routine = {
   detail: string;
   dueLabel: string;
   done: boolean;
+  /** Anzeigename (Legacy) — bevorzugt memberId + members */
   assignee?: string;
+  /** Person im Haushalt — Farbe aus members.color */
+  memberId?: string;
   visibility?: "shared" | "private";
 };
 
@@ -91,7 +94,7 @@ export type PlanEvent = {
    * shared = für alle, private = nur ich, partner = nur mit Partner
    */
   visibility?: "shared" | "private" | "partner";
-  /** Person im Haushalt (Urlaub) — Farbe aus members.color */
+  /** Person im Haushalt (Termin, Urlaub, …) — Farbe aus members.color */
   memberId?: string;
   /** Gleiche Serie bei Wiederholung */
   seriesId?: string;

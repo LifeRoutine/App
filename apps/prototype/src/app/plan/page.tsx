@@ -104,7 +104,7 @@ export default function PlanPage() {
   const [evDetail, setEvDetail] = useState("");
   const [evRepeat, setEvRepeat] = useState<EventRepeat>("none");
   const [evUntil, setEvUntil] = useState("");
-
+  const [evMemberId, setEvMemberId] = useState("");
   const [ferienState, setFerienState] = useState(
     state.profile.schoolHolidayState || "BW",
   );
@@ -184,12 +184,14 @@ export default function PlanPage() {
       visibility: evVisibility,
       repeat: evRepeat,
       repeatUntil: evRepeat === "none" ? undefined : evUntil || undefined,
+      memberId: evMemberId || undefined,
     });
     setEvTitle("");
     setEvDetail("");
     setEvVisibility("shared");
     setEvRepeat("none");
     setEvUntil("");
+    setEvMemberId("");
     setShowAdd(false);
   }
 
@@ -712,6 +714,25 @@ export default function PlanPage() {
                     </select>
                   </label>
                 </div>
+                {state.members.length > 0 ? (
+                  <label className="block">
+                    <span className="text-xs font-semibold text-muted">
+                      Wer? (Farbe im Kalender)
+                    </span>
+                    <select
+                      value={evMemberId}
+                      onChange={(e) => setEvMemberId(e.target.value)}
+                      className="mt-1 w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm"
+                    >
+                      <option value="">Niemand / alle</option>
+                      {state.members.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
                 <label className="block">
                   <span className="text-xs font-semibold text-muted">
                     Notiz (optional)
@@ -829,7 +850,9 @@ export default function PlanPage() {
                               ? "Schulferien"
                               : ev.source === "vacation"
                                 ? `Urlaub${memberName ? ` · ${memberName}` : ""}`
-                                : eventVisibilityLabel[ev.visibility ?? "shared"]}
+                                : memberName
+                                  ? `${eventVisibilityLabel[ev.visibility ?? "shared"]} · ${memberName}`
+                                  : eventVisibilityLabel[ev.visibility ?? "shared"]}
                           {rangeLabel ? ` · ${rangeLabel}` : ""}
                           {ev.repeat && ev.repeat !== "none"
                             ? ` · ${eventRepeatLabel[ev.repeat]}`

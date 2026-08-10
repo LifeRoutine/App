@@ -44,6 +44,16 @@ Stand: 2026-08-09 · inkl. Abgleich Gemini-Empfehlungen
 - [ ] Müll: Landkreis-/Kommunen-Kalender anbinden (pro Region anders; ICS/Link/manuell — kein Scraping, nichts erfinden)
 - [ ] Schwesterlogik AquaRoutine später, nicht Blocker für P1
 
+## Inspiration Dæly (nur Software-Ideen, kein Wandgerät) — 2026-08-10
+Abgeguckt von daely-shop.com; LifeRoutine bleibt App/PWA-Routine, kein Hardware-Konkurrent.
+- [x] **Person-Farbe überall:** Termine + Zuhause-Routinen („Wer?“ / „Wer macht’s?“) — Urlaub schon zuvor
+- [ ] **Kalender-Import (opt-in):** eigene .ics / Google-/Apple-Link vom Nutzer — wie Müllkalender, nichts scrapen
+- [ ] **Erinnerungen:** Push/PWA-Notification vor Termin/Routine/Frist (einfach, alltagssprachlich)
+- [ ] **Mehrere Listen:** nicht nur eine Einkaufsliste (z. B. Baumarkt, Reise) — klar getrennt
+- [ ] **Essensplan sichtbarer:** Woche auf einen Blick + „Was gibt’s heute?“ auf Heute
+- [ ] Später optional: kinderleichtes Abhaken / Punkte — nur wenn Tester Familien mit Kindern priorisieren
+- **Nicht übernehmen:** Wand-Display, Bilderrahmen-Modus, Geräte-Montage, Hardware-Preis
+
 ## Produkt / sonstig
 - [ ] Marken- und Domainprüfung finalisieren
 - [ ] Preismodell mit Nutzenkommunikation testen

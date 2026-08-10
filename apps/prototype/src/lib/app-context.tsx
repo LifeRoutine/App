@@ -171,7 +171,7 @@ type AppContextValue = {
   lookupUserCatalog: (barcode: string) => UserCatalogEntry | null;
   clearCheckedToPantry: () => number;
   removeCatalogEntry: (barcode: string) => void;
-  addRoutine: (title: string) => void;
+  addRoutine: (title: string, memberId?: string) => void;
   addMissingFromMeal: (mealId: string) => number;
   toggleRoutine: (id: string) => void;
   cyclePantryStatus: (id: string) => void;
@@ -864,23 +864,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addRoutine = useCallback(
-    (title: string) => {
+    (title: string, memberId?: string) => {
       const trimmed = title.trim();
       if (!trimmed) return;
-      update((prev) => ({
-        ...prev,
-        routines: [
-          {
-            id: `r-${Date.now()}`,
-            title: trimmed,
-            cadence: "wöchentlich",
-            detail: "Selbst hinzugefügt.",
-            dueLabel: "Heute",
-            done: false,
-          },
-          ...prev.routines,
-        ],
-      }));
+      update((prev) => {
+        const member = memberId
+          ? prev.members.find((m) => m.id === memberId)
+          : undefined;
+        return {
+          ...prev,
+          routines: [
+            {
+              id: `r-${Date.now()}`,
+              title: trimmed,
+              cadence: "wöchentlich",
+              detail: "Selbst hinzugefügt.",
+              dueLabel: "Heute",
+              done: false,
+              memberId: member?.id,
+              assignee: member?.name,
+            },
+            ...prev.routines,
+          ],
+        };
+      });
     },
     [update],
   );
