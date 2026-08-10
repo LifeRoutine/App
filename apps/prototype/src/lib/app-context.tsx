@@ -51,7 +51,7 @@ import {
 import {
   dayOffsetFromDate,
   eventDateISO,
-  expandRepeatDates,
+  eventsOnDate,
   localDateISO,
   normalizePlanEvent,
 } from "@/lib/plan-dates";
@@ -151,8 +151,12 @@ type AppContextValue = {
     repeatUntil?: string;
   }) => void;
   removeEvent: (id: string) => void;
-  /** Serie komplett löschen (alle Termine mit gleicher seriesId) */
+  /** Serie komplett löschen */
   removeEventSeries: (seriesId: string) => void;
+  /** Serie beenden (keine weiteren Termine nach dem Datum) */
+  endEventSeries: (seriesId: string, lastDateInclusive: string) => void;
+  /** Einzelnen Serientermin auslassen */
+  skipSeriesOccurrence: (seriesId: string, dateISO: string) => void;
   resetDemo: () => void;
   importBackup: (next: AppState) => void;
 };
@@ -279,9 +283,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const buyOffer = openOffers.find((x) => x.offer.advice === "kaufen");
     const openRoutine = state.routines.find((r) => !r.done);
     const today = localDateISO();
-    const todayEvents = state.events.filter(
-      (e) => eventDateISO(e, today) === today,
-    );
+    const todayEvents = eventsOnDate(state.events, today, today);
     const doc = state.documents[0];
     const list: Priority[] = [];
 
@@ -921,37 +923,52 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (!title || !input.date) return;
       const today = localDateISO();
       const repeat = input.repeat ?? "none";
-      const dates = expandRepeatDates(input.date, repeat, input.repeatUntil);
-      const seriesId =
-        repeat === "none" ? undefined : `series-${Date.now()}`;
       const baseDetail = input.detail?.trim() || "Selbst eingetragen.";
-      const created = dates.map((date, index) =>
-        normalizePlanEvent(
+
+      if (repeat === "none") {
+        const ev = normalizePlanEvent(
           {
-            id: `ev-${Date.now()}-${index}`,
+            id: `ev-${Date.now()}`,
             title,
             time: input.time || "12:00",
-            date,
-            dayOffset: dayOffsetFromDate(date, today),
+            date: input.date,
+            dayOffset: dayOffsetFromDate(input.date, today),
             kind: input.kind ?? "termin",
-            detail:
-              repeat === "none"
-                ? baseDetail
-                : `${baseDetail}${baseDetail.endsWith(".") ? "" : "."} Wiederholung.`,
+            detail: baseDetail,
             visibility: "shared",
-            seriesId,
-            repeat,
+            repeat: "none",
           },
           today,
-        ),
+        );
+        update((prev) => ({
+          ...prev,
+          events: [...prev.events, ev],
+        }));
+        return;
+      }
+
+      const seriesId = `series-${Date.now()}`;
+      const master = normalizePlanEvent(
+        {
+          id: seriesId,
+          title,
+          time: input.time || "12:00",
+          date: input.date,
+          dayOffset: dayOffsetFromDate(input.date, today),
+          kind: input.kind ?? "termin",
+          detail: baseDetail,
+          visibility: "shared",
+          seriesId,
+          seriesMaster: true,
+          repeat,
+          repeatUntil: input.repeatUntil || undefined,
+          skipDates: [],
+        },
+        today,
       );
       update((prev) => ({
         ...prev,
-        events: [...prev.events, ...created].sort((a, b) => {
-          const da = eventDateISO(a, today).localeCompare(eventDateISO(b, today));
-          if (da !== 0) return da;
-          return a.time.localeCompare(b.time);
-        }),
+        events: [...prev.events, master],
       }));
     },
     [update],
@@ -971,7 +988,46 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     (seriesId: string) => {
       update((prev) => ({
         ...prev,
-        events: prev.events.filter((e) => e.seriesId !== seriesId),
+        events: prev.events.filter((e) => e.seriesId !== seriesId && e.id !== seriesId),
+      }));
+    },
+    [update],
+  );
+
+  const endEventSeries = useCallback(
+    (seriesId: string, lastDateInclusive: string) => {
+      update((prev) => ({
+        ...prev,
+        events: prev.events.flatMap((e) => {
+          if (e.seriesMaster && (e.seriesId === seriesId || e.id === seriesId)) {
+            return [{ ...e, repeatUntil: lastDateInclusive }];
+          }
+          if (e.seriesId === seriesId && !e.seriesMaster) {
+            return eventDateISO(e) > lastDateInclusive ? [] : [e];
+          }
+          return [e];
+        }),
+      }));
+    },
+    [update],
+  );
+
+  const skipSeriesOccurrence = useCallback(
+    (seriesId: string, dateISO: string) => {
+      update((prev) => ({
+        ...prev,
+        events: prev.events.flatMap((e) => {
+          if (e.seriesMaster && e.seriesId === seriesId) {
+            const skip = new Set(e.skipDates ?? []);
+            skip.add(dateISO);
+            return [{ ...e, skipDates: [...skip].sort() }];
+          }
+          // Legacy-Instanz an diesem Tag entfernen
+          if (e.seriesId === seriesId && eventDateISO(e) === dateISO && !e.seriesMaster) {
+            return [];
+          }
+          return [e];
+        }),
       }));
     },
     [update],
@@ -1036,6 +1092,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addEvent,
     removeEvent,
     removeEventSeries,
+    endEventSeries,
+    skipSeriesOccurrence,
     resetDemo,
     importBackup,
   };

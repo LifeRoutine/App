@@ -66,26 +66,113 @@ export const eventRepeatLabel: Record<EventRepeat, string> = {
   monthly: "Monatlich",
 };
 
-/** Nächste Wiederholungsdaten ab Start (inkl. Start). */
-export function expandRepeatDates(
+function stepRepeat(cur: string, repeat: EventRepeat): string {
+  if (repeat === "weekly") return addDaysISO(cur, 7);
+  if (repeat === "biweekly") return addDaysISO(cur, 14);
+  const d = new Date(`${cur}T12:00:00`);
+  d.setMonth(d.getMonth() + 1);
+  return localDateISO(d);
+}
+
+/**
+ * Vorkommen einer Serie im Zeitraum [fromISO, toISO].
+ * Ohne repeatUntil = unbegrenzt (nur durch toISO begrenzt).
+ */
+export function datesInRangeForRepeat(
   startISO: string,
   repeat: EventRepeat,
-  untilISO?: string,
-  maxCount = 26,
+  fromISO: string,
+  toISO: string,
+  repeatUntil?: string,
+  skipDates: string[] = [],
 ): string[] {
-  if (repeat === "none") return [startISO];
-  const until = untilISO && untilISO >= startISO ? untilISO : addDaysISO(startISO, 180);
+  if (repeat === "none") {
+    if (
+      startISO >= fromISO &&
+      startISO <= toISO &&
+      !skipDates.includes(startISO)
+    ) {
+      return [startISO];
+    }
+    return [];
+  }
+  const hardEnd =
+    repeatUntil && repeatUntil < toISO ? repeatUntil : toISO;
+  const skip = new Set(skipDates);
   const out: string[] = [];
   let cur = startISO;
-  while (out.length < maxCount && cur <= until) {
-    out.push(cur);
-    if (repeat === "weekly") cur = addDaysISO(cur, 7);
-    else if (repeat === "biweekly") cur = addDaysISO(cur, 14);
-    else {
-      const d = new Date(`${cur}T12:00:00`);
-      d.setMonth(d.getMonth() + 1);
-      cur = localDateISO(d);
-    }
+  let guard = 0;
+  // Vorspulen bis in den sichtbaren Bereich
+  while (cur < fromISO && guard < 5000) {
+    cur = stepRepeat(cur, repeat);
+    guard++;
+  }
+  while (cur <= hardEnd && guard < 5000) {
+    if (cur >= fromISO && cur <= toISO && !skip.has(cur)) out.push(cur);
+    cur = stepRepeat(cur, repeat);
+    guard++;
   }
   return out;
+}
+
+/** Termine für Anzeige: Serien-Master expandieren, Einmaltermine übernehmen. */
+export function expandEventsForRange(
+  events: PlanEvent[],
+  fromISO: string,
+  toISO: string,
+  todayISO = localDateISO(),
+): PlanEvent[] {
+  const out: PlanEvent[] = [];
+  for (const e of events) {
+    const start = eventDateISO(e, todayISO);
+    const isMaster =
+      Boolean(e.seriesMaster) &&
+      Boolean(e.repeat) &&
+      e.repeat !== "none";
+
+    if (isMaster) {
+      const dates = datesInRangeForRepeat(
+        start,
+        e.repeat!,
+        fromISO,
+        toISO,
+        e.repeatUntil,
+        e.skipDates ?? [],
+      );
+      for (const date of dates) {
+        out.push(
+          normalizePlanEvent(
+            {
+              ...e,
+              id: `${e.seriesId ?? e.id}:${date}`,
+              date,
+              seriesMaster: false,
+              detail: e.detail,
+            },
+            todayISO,
+          ),
+        );
+      }
+      continue;
+    }
+
+    // Legacy-Instanzen / Einmaltermine (kein Master)
+    if (e.seriesMaster) continue;
+    if (start >= fromISO && start <= toISO) {
+      out.push(normalizePlanEvent(e, todayISO));
+    }
+  }
+  return out.sort((a, b) => {
+    const da = eventDateISO(a, todayISO).localeCompare(eventDateISO(b, todayISO));
+    if (da !== 0) return da;
+    return a.time.localeCompare(b.time);
+  });
+}
+
+export function eventsOnDate(
+  events: PlanEvent[],
+  dateISO: string,
+  todayISO = localDateISO(),
+): PlanEvent[] {
+  return expandEventsForRange(events, dateISO, dateISO, todayISO);
 }

@@ -78,7 +78,13 @@ export type PlanEvent = {
   visibility?: "shared" | "private";
   /** Gleiche Serie bei Wiederholung */
   seriesId?: string;
+  /** true = Serien-Regel (wird für Anzeige expandiert, unbegrenzt bis beendet) */
+  seriesMaster?: boolean;
   repeat?: EventRepeat;
+  /** Ende der Serie (inkl.); fehlt = läuft weiter bis beendet */
+  repeatUntil?: string;
+  /** Einzelne Tage aus der Serie auslassen */
+  skipDates?: string[];
 };
 
 export type DocumentType =

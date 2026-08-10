@@ -9,6 +9,7 @@ import {
   eventDateISO,
   eventKindLabel,
   eventRepeatLabel,
+  expandEventsForRange,
   formatDayHeading,
   localDateISO,
 } from "@/lib/plan-dates";
@@ -40,7 +41,7 @@ function monthMatrix(year: number, monthIndex: number): (string | null)[][] {
 }
 
 export default function PlanPage() {
-  const { state, addDocument, removeDocument, addEvent, removeEvent, removeEventSeries } =
+  const { state, addDocument, removeDocument, addEvent, removeEvent, removeEventSeries, endEventSeries, skipSeriesOccurrence } =
     useApp();
   const today = localDateISO();
   const [tab, setTab] = useState<PlanTab>("termine");
@@ -75,8 +76,15 @@ export default function PlanPage() {
   );
 
   const eventsByDate = useMemo(() => {
+    const monthStart = localDateISO(new Date(cursor.year, cursor.month, 1));
+    const monthEnd = localDateISO(new Date(cursor.year, cursor.month + 1, 0));
+    const from = weekDays[0] < monthStart ? weekDays[0] : monthStart;
+    let to = weekDays[6] > monthEnd ? weekDays[6] : monthEnd;
+    // Serien weit genug voraus expandieren (Anzeige + nächste Wochen)
+    if (to < addDaysISO(today, 90)) to = addDaysISO(today, 90);
+    const expanded = expandEventsForRange(state.events, from, to, today);
     const map = new Map<string, PlanEvent[]>();
-    for (const e of state.events) {
+    for (const e of expanded) {
       const d = eventDateISO(e, today);
       const list = map.get(d) ?? [];
       list.push(e);
@@ -84,7 +92,7 @@ export default function PlanPage() {
     }
     for (const [, list] of map) list.sort((a, b) => a.time.localeCompare(b.time));
     return map;
-  }, [state.events, today]);
+  }, [state.events, today, weekDays, cursor.year, cursor.month]);
 
   const dayEvents = eventsByDate.get(selected) ?? [];
   const matrix = monthMatrix(cursor.year, cursor.month);
@@ -411,7 +419,7 @@ export default function PlanPage() {
                 {evRepeat !== "none" ? (
                   <label className="block">
                     <span className="text-xs font-semibold text-muted">
-                      Bis Datum (optional, sonst ca. 6 Monate)
+                      Endet am (optional) — leer = dauerhaft bis du beendest
                     </span>
                     <input
                       type="date"
@@ -464,30 +472,63 @@ export default function PlanPage() {
                         </p>
                       </div>
                       <div className="flex shrink-0 flex-col items-end gap-1">
-                        <button
-                          type="button"
-                          onClick={() => removeEvent(ev.id)}
-                          className="text-xs font-semibold text-muted underline"
-                        >
-                          Löschen
-                        </button>
                         {ev.seriesId ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                skipSeriesOccurrence(
+                                  ev.seriesId!,
+                                  eventDateISO(ev, today),
+                                )
+                              }
+                              className="text-xs font-semibold text-muted underline"
+                            >
+                              Diesen auslassen
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (
+                                  window.confirm(
+                                    "Serie beenden? Ab diesem Termin keine weiteren Wiederholungen.",
+                                  )
+                                ) {
+                                  endEventSeries(
+                                    ev.seriesId!,
+                                    eventDateISO(ev, today),
+                                  );
+                                }
+                              }}
+                              className="text-xs font-semibold text-muted underline"
+                            >
+                              Serie beenden
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (
+                                  window.confirm(
+                                    "Ganze Serie löschen (alle Termine)?",
+                                  )
+                                ) {
+                                  removeEventSeries(ev.seriesId!);
+                                }
+                              }}
+                              className="text-xs font-semibold text-muted underline"
+                            >
+                              Serie löschen
+                            </button>
+                          </>
+                        ) : (
                           <button
                             type="button"
-                            onClick={() => {
-                              if (
-                                window.confirm(
-                                  "Ganze Serie löschen (alle Wiederholungen)?",
-                                )
-                              ) {
-                                removeEventSeries(ev.seriesId!);
-                              }
-                            }}
+                            onClick={() => removeEvent(ev.id)}
                             className="text-xs font-semibold text-muted underline"
                           >
-                            Serie löschen
+                            Löschen
                           </button>
-                        ) : null}
+                        )}
                       </div>
                     </div>
                   </article>
