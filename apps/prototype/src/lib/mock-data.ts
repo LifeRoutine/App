@@ -13,14 +13,26 @@ import type {
   ShopItem,
 } from "@/lib/types";
 
-/** Nominatim-belegte Märkte (Stand 2026-08-09), Distanz von Landstraße 19, Stein/Hechingen. Keine erfundenen Adressen. */
+/** Nominatim-belegte Märkte (Stand 2026-08-10), Distanz von Landstraße 19, Stein/Hechingen. Keine erfundenen Adressen. */
 export const DEFAULT_STORE_IDS = [
+  "kaufland-kaullastrasse",
   "lidl-haigerlocher",
   "dm-hechingen",
   "aldi-hechingen",
 ];
 
 export const nearbyStoresHechingen: NearbyStore[] = [
+  {
+    id: "kaufland-kaullastrasse",
+    name: "Kaufland",
+    chain: "Kaufland",
+    address: "Kaullastraße 1, Hechingen",
+    distanceKm: 1.2,
+    walkMin: 14,
+    lat: 48.3748565,
+    lon: 8.9614123,
+    source: "demo",
+  },
   {
     id: "lidl-haigerlocher",
     name: "Lidl",
@@ -63,6 +75,17 @@ export const nearbyStoresHechingen: NearbyStore[] = [
     walkMin: 28,
     lat: 48.3563677,
     lon: 8.9636486,
+    source: "demo",
+  },
+  {
+    id: "kaufland-gammertinger",
+    name: "Kaufland",
+    chain: "Kaufland",
+    address: "Gammertinger Straße 44, Hechingen",
+    distanceKm: 3.0,
+    walkMin: 36,
+    lat: 48.3545327,
+    lon: 8.9754127,
     source: "demo",
   },
   {
