@@ -60,6 +60,7 @@ import { hydrateAppState } from "@/lib/backup";
 import { makeInviteCode, warnLabelForMonths } from "@/lib/mock-data";
 
 const STORAGE_KEY = "liferoutine.app.v1";
+const GUEST_KEY = "liferoutine.guest.v1";
 
 type DemoUser = {
   username: string;
@@ -76,15 +77,37 @@ function modeFromStore(
   return "browser";
 }
 
+function readGuestFlag(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.sessionStorage.getItem(GUEST_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writeGuestFlag(on: boolean) {
+  if (typeof window === "undefined") return;
+  try {
+    if (on) window.sessionStorage.setItem(GUEST_KEY, "1");
+    else window.sessionStorage.removeItem(GUEST_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 type AppContextValue = {
   ready: boolean;
   authenticated: boolean;
+  /** Ohne Konto — nur dieses Gerät / Browser */
+  isGuest: boolean;
   demoUser: DemoUser | null;
   storageMode: "server" | "local-file" | "memory" | "browser";
   loginDemo: (
     username: string,
     password: string,
   ) => Promise<{ ok: true } | { ok: false; error: string }>;
+  continueAsGuest: () => void;
   logoutDemo: () => Promise<void>;
   state: AppState;
   allStores: NearbyStore[];
@@ -261,6 +284,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>(createDefaultState);
   const [ready, setReady] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
   const [demoUser, setDemoUser] = useState<DemoUser | null>(null);
   const [storageMode, setStorageMode] = useState<
     "server" | "local-file" | "memory" | "browser"
@@ -279,16 +303,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         };
         if (cancelled) return;
         if (data.authenticated && data.user && data.state) {
+          writeGuestFlag(false);
           setDemoUser(data.user);
           setState(hydrateAppState(data.state));
           setAuthenticated(true);
+          setIsGuest(false);
           setStorageMode(modeFromStore(data.store));
+        } else if (readGuestFlag()) {
+          setAuthenticated(false);
+          setDemoUser(null);
+          setIsGuest(true);
+          setState(loadState());
+          setStorageMode("browser");
         } else {
           setAuthenticated(false);
           setDemoUser(null);
+          setIsGuest(false);
         }
       } catch {
         if (!cancelled) {
+          if (readGuestFlag()) {
+            setIsGuest(true);
+            setState(loadState());
+            setStorageMode("browser");
+          }
           setAuthenticated(false);
           setDemoUser(null);
         }
@@ -302,20 +340,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!ready || !authenticated) return;
-    saveState(state);
-    const t = window.setTimeout(() => {
-      void fetch("/api/demo/state", {
-        method: "PUT",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ state }),
-      }).catch(() => {
-        /* offline — lokal bleibt Cache */
-      });
-    }, 600);
-    return () => window.clearTimeout(t);
-  }, [ready, authenticated, state]);
+    if (!ready) return;
+    if (authenticated) {
+      saveState(state);
+      const t = window.setTimeout(() => {
+        void fetch("/api/demo/state", {
+          method: "PUT",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ state }),
+        }).catch(() => {
+          /* offline — lokal bleibt Cache */
+        });
+      }, 600);
+      return () => window.clearTimeout(t);
+    }
+    if (isGuest) {
+      saveState(state);
+    }
+  }, [ready, authenticated, isGuest, state]);
 
   const loginDemo = useCallback(async (username: string, password: string) => {
     try {
@@ -337,6 +380,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           error: data.error || "Anmeldung fehlgeschlagen.",
         };
       }
+      writeGuestFlag(false);
+      setIsGuest(false);
       setDemoUser(data.user);
       setState(hydrateAppState(data.state));
       setAuthenticated(true);
@@ -350,6 +395,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const continueAsGuest = useCallback(() => {
+    writeGuestFlag(true);
+    setIsGuest(true);
+    setAuthenticated(false);
+    setDemoUser(null);
+    setState(loadState());
+    setStorageMode("browser");
+  }, []);
+
   const logoutDemo = useCallback(async () => {
     try {
       await fetch("/api/demo/logout", {
@@ -359,12 +413,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch {
       /* ignore */
     }
+    writeGuestFlag(false);
+    setIsGuest(false);
     setAuthenticated(false);
     setDemoUser(null);
     setState(createDefaultState());
     setStorageMode("browser");
   }, []);
-
   const update = useCallback((fn: (prev: AppState) => AppState) => {
     setState(fn);
   }, []);
@@ -1320,9 +1375,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const value: AppContextValue = {
     ready,
     authenticated,
+    isGuest,
     demoUser,
     storageMode,
     loginDemo,
+    continueAsGuest,
     logoutDemo,
     state,
     allStores,

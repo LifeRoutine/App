@@ -21,6 +21,7 @@ export default function EinstellungenPage() {
     demoUser,
     storageMode,
     logoutDemo,
+    isGuest,
   } = useApp();
   const [name, setName] = useState(state.profile.displayName);
   const [type, setType] = useState(state.profile.householdType);
@@ -130,7 +131,9 @@ export default function EinstellungenPage() {
           <p className="mt-1 text-sm text-muted">
             {demoUser
               ? `Angemeldet als ${demoUser.displayName} (${demoUser.username}).`
-              : "Nicht angemeldet."}
+              : isGuest
+                ? "Gast — nur auf diesem Gerät."
+                : "Nicht angemeldet."}
           </p>
           <p className="mt-1 text-xs text-muted">
             Speicherung:{" "}
@@ -147,7 +150,7 @@ export default function EinstellungenPage() {
             onClick={() => void logoutDemo()}
             className="mt-3 w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm font-semibold text-ink"
           >
-            Abmelden
+            {isGuest ? "Gast beenden" : "Abmelden"}
           </button>
         </section>
 

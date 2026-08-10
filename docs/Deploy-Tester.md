@@ -27,9 +27,9 @@ Ohne Upstash funktioniert Login lokal (Ordner `.data/`) bzw. auf Vercel nur kurz
 ## Was passiert?
 
 1. Deploy auf Vercel (Root: `apps/prototype`).  
-2. Tester öffnen die URL → **Anmelden** (irena oder saskia).  
+2. Tester öffnen die URL → **Anmelden** (irena / saskia) **oder „Als Gast weiter“**.  
 3. Optional: App aufs Startbildschirm legen.  
-4. Änderungen werden für den jeweiligen Haushalt gespeichert.  
+4. Mit Login: Änderungen werden für den jeweiligen Haushalt gespeichert. Gast: nur Browser.  
 5. Zusätzlich: Sicherungskopie unter Einstellungen.
 
 ---

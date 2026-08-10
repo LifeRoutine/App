@@ -6,7 +6,8 @@ import { BrandWordmark } from "@/components/brand-mark";
 import { useApp } from "@/lib/app-context";
 
 export function DemoLoginGate({ children }: { children: React.ReactNode }) {
-  const { ready, authenticated, loginDemo } = useApp();
+  const { ready, authenticated, isGuest, loginDemo, continueAsGuest } =
+    useApp();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -14,7 +15,7 @@ export function DemoLoginGate({ children }: { children: React.ReactNode }) {
   const [busy, setBusy] = useState(false);
 
   if (!ready) return <AppLoading label="Anmelden vorbereiten…" />;
-  if (authenticated) return <>{children}</>;
+  if (authenticated || isGuest) return <>{children}</>;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -32,7 +33,8 @@ export function DemoLoginGate({ children }: { children: React.ReactNode }) {
         Anmelden
       </h1>
       <p className="mt-1 text-center text-sm text-muted">
-        Demo-Zugang — Daten werden für deinen Haushalt gespeichert.
+        Mit Demo-Zugang speichert die App auf dem Server. Als Gast nur auf
+        diesem Gerät.
       </p>
 
       <form
@@ -80,6 +82,17 @@ export function DemoLoginGate({ children }: { children: React.ReactNode }) {
           {busy ? "…" : "Einloggen"}
         </button>
       </form>
+
+      <button
+        type="button"
+        onClick={continueAsGuest}
+        className="mt-3 w-full rounded-2xl border border-line bg-white/90 px-4 py-3 text-sm font-semibold text-ink"
+      >
+        Als Gast weiter
+      </button>
+      <p className="mt-2 text-center text-xs text-muted">
+        Gast: kein Server-Konto — Daten bleiben im Browser.
+      </p>
     </div>
   );
 }
