@@ -142,8 +142,12 @@ export default function PlanPage() {
 
   function submitDoc() {
     if (!expiresOn) return;
+    if (docType === "sonstiges" && !title.trim()) return;
     addDocument({
-      title: title.trim() || docTypeLabel[docType],
+      title:
+        docType === "sonstiges"
+          ? title.trim()
+          : docTypeLabel[docType],
       docType,
       person,
       personId,
@@ -560,7 +564,11 @@ export default function PlanPage() {
                 <span className="text-xs font-semibold text-muted">Typ</span>
                 <select
                   value={docType}
-                  onChange={(e) => setDocType(e.target.value as DocumentType)}
+                  onChange={(e) => {
+                    const next = e.target.value as DocumentType;
+                    setDocType(next);
+                    if (next !== "sonstiges") setTitle("");
+                  }}
                   className="mt-1 w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm"
                 >
                   {docTypes.map((t) => (
@@ -570,15 +578,19 @@ export default function PlanPage() {
                   ))}
                 </select>
               </label>
-              <label className="block">
-                <span className="text-xs font-semibold text-muted">Titel</span>
-                <input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder={docTypeLabel[docType]}
-                  className="mt-1 w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm outline-none ring-green/30 focus:ring-2"
-                />
-              </label>
+              {docType === "sonstiges" ? (
+                <label className="block">
+                  <span className="text-xs font-semibold text-muted">
+                    Was genau?
+                  </span>
+                  <input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="z. B. Impfpass, ADAC-Mitgliedschaft…"
+                    className="mt-1 w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm outline-none ring-green/30 focus:ring-2"
+                  />
+                </label>
+              ) : null}
               <label className="block">
                 <span className="text-xs font-semibold text-muted">Person</span>
                 <select
@@ -627,7 +639,9 @@ export default function PlanPage() {
               <button
                 type="button"
                 onClick={submitDoc}
-                disabled={!expiresOn}
+                disabled={
+                  !expiresOn || (docType === "sonstiges" && !title.trim())
+                }
                 className="w-full rounded-2xl bg-green px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
               >
                 Speichern
@@ -646,10 +660,10 @@ export default function PlanPage() {
                 >
                   <div>
                     <p className="font-semibold text-ink">
-                      {doc.title} · {doc.person}
-                    </p>
-                    <p className="text-xs text-muted">
-                      {docTypeLabel[doc.docType]}
+                      {doc.docType === "sonstiges"
+                        ? doc.title
+                        : docTypeLabel[doc.docType]}{" "}
+                      · {doc.person}
                     </p>
                     <p className="mt-0.5 text-sm text-muted">
                       Ablauf{" "}

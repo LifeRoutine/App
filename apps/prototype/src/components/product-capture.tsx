@@ -26,6 +26,7 @@ export function ProductCapture({ title = "Produkt erfassen", onProduct }: Props)
   const { state, lookupUserCatalog, teachCatalog } = useApp();
   const [scanOpen, setScanOpen] = useState(false);
   const [name, setName] = useState("");
+  const [qtyAmount, setQtyAmount] = useState(1);
   const [ean, setEan] = useState("");
   const [pendingCode, setPendingCode] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -35,10 +36,23 @@ export function ProductCapture({ title = "Produkt erfassen", onProduct }: Props)
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<number | null>(null);
 
-  const suggestions = useMemo(
-    () => filterCatalogNames(state.userCatalog, name, 8),
+  const knownOptions = useMemo(
+    () => filterCatalogNames(state.userCatalog, name, 40),
     [state.userCatalog, name],
   );
+
+  function qtyLabel(amount = qtyAmount) {
+    return `${Math.max(1, Math.min(99, Math.round(amount) || 1))}×`;
+  }
+
+  function setQtyFromInput(raw: string) {
+    const n = Number(raw);
+    if (!Number.isFinite(n)) {
+      setQtyAmount(1);
+      return;
+    }
+    setQtyAmount(Math.max(1, Math.min(99, Math.round(n))));
+  }
 
   function stopCamera() {
     if (timerRef.current) {
@@ -69,9 +83,10 @@ export function ProductCapture({ title = "Produkt erfassen", onProduct }: Props)
   }
 
   function pickKnown(knownName: string) {
-    onProduct({ barcode: "", name: knownName, qty: "1×", source: "manual" });
+    const qty = qtyLabel();
+    onProduct({ barcode: "", name: knownName, qty, source: "manual" });
     setName("");
-    setMessage(`„${knownName}“ hinzugefügt`);
+    setMessage(`„${knownName}“ (${qty}) hinzugefügt`);
   }
 
   async function resolveAndAdd(code: string) {
@@ -121,7 +136,7 @@ export function ProductCapture({ title = "Produkt erfassen", onProduct }: Props)
 
     if (pendingCode) {
       acceptProduct(
-        { barcode: pendingCode, name: trimmed, qty: "1×" },
+        { barcode: pendingCode, name: trimmed, qty: qtyLabel() },
         "manual",
         "user",
       );
@@ -132,9 +147,10 @@ export function ProductCapture({ title = "Produkt erfassen", onProduct }: Props)
       return;
     }
 
-    onProduct({ barcode: "", name: trimmed, qty: "1×", source: "manual" });
+    const qty = qtyLabel();
+    onProduct({ barcode: "", name: trimmed, qty, source: "manual" });
     setName("");
-    setMessage(`„${trimmed}“ hinzugefügt · wird fürs nächste Mal gemerkt`);
+    setMessage(`„${trimmed}“ (${qty}) hinzugefügt · wird gemerkt`);
   }
 
   function submitEan(e: React.FormEvent) {
@@ -205,7 +221,7 @@ export function ProductCapture({ title = "Produkt erfassen", onProduct }: Props)
           <p className="font-display text-base font-semibold text-ink">{title}</p>
           <p className="text-[0.65rem] text-muted">
             {state.userCatalog.length > 0
-              ? `${state.userCatalog.length} bekannte Produkte — antippen oder tippen`
+              ? "Menge einstellen, dann tippen oder aus Liste wählen"
               : "Name tippen — wird automatisch gemerkt"}
           </p>
         </div>
@@ -228,9 +244,23 @@ export function ProductCapture({ title = "Produkt erfassen", onProduct }: Props)
           placeholder={
             pendingCode ? "Name für diesen Code…" : "z. B. Hafermilch"
           }
-          className="flex-1 rounded-xl border border-line bg-white px-3 py-2.5 text-sm outline-none ring-green/30 focus:ring-2"
+          className="min-w-0 flex-1 rounded-xl border border-line bg-white px-3 py-2.5 text-sm outline-none ring-green/30 focus:ring-2"
           autoComplete="off"
         />
+        <label className="w-[3.75rem] shrink-0">
+          <span className="sr-only">Menge</span>
+          <input
+            type="number"
+            min={1}
+            max={99}
+            inputMode="numeric"
+            value={qtyAmount}
+            onChange={(e) => setQtyFromInput(e.target.value)}
+            className="w-full rounded-xl border border-line bg-white px-2 py-2.5 text-center text-sm outline-none ring-green/30 focus:ring-2"
+            title="Menge"
+            aria-label="Menge"
+          />
+        </label>
         <button
           type="submit"
           className="rounded-xl bg-green px-3 py-2 text-xs font-semibold text-white"
@@ -246,24 +276,29 @@ export function ProductCapture({ title = "Produkt erfassen", onProduct }: Props)
         </div>
       ) : null}
 
-      {suggestions.length > 0 ? (
-        <div className="mt-2">
-          <p className="mb-1.5 text-[0.65rem] font-semibold uppercase tracking-wide text-muted">
-            {name.trim() ? "Treffer" : "Bekannt — antippen"}
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {suggestions.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => pickKnown(s)}
-                className="rounded-full border border-line bg-sand/80 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-mint"
-              >
+      {knownOptions.length > 0 && !pendingCode ? (
+        <label className="mt-2 block">
+          <span className="sr-only">Bekanntes Produkt wählen</span>
+          <select
+            value=""
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v) pickKnown(v);
+            }}
+            className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm text-ink outline-none ring-green/30 focus:ring-2"
+          >
+            <option value="">
+              {name.trim()
+                ? `Treffer wählen (${knownOptions.length}) · Menge ${qtyLabel()}…`
+                : `Bekanntes wählen · Menge ${qtyLabel()}…`}
+            </option>
+            {knownOptions.map((s) => (
+              <option key={s} value={s}>
                 {s}
-              </button>
+              </option>
             ))}
-          </div>
-        </div>
+          </select>
+        </label>
       ) : null}
 
       {scanOpen ? (

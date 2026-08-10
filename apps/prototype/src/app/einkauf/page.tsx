@@ -50,8 +50,7 @@ export default function EinkaufPage() {
       <section className="mt-4 rounded-2xl border border-line bg-white/80 px-4 py-3">
         <p className="text-sm font-semibold text-ink">Liste erweitern so:</p>
         <p className="mt-1 text-xs text-muted">
-          Tippen · bekannte Produkte antippen · Barcode · Vorräte · Essen ·
-          Helfer
+          Tippen · aus Bekanntem wählen · Barcode · Vorräte · Essen · Helfer
         </p>
         <p className="mt-1 text-xs text-muted">
           Beleg nach dem Einkauf: unter{" "}

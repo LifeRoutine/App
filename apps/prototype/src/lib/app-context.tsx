@@ -211,6 +211,7 @@ function mergeShopNames(
       ? {
           ...item,
           checked: false,
+          qty: meta?.qty ?? item.qty,
           barcode: meta?.barcode ?? item.barcode,
           source: meta?.source ?? item.source,
         }

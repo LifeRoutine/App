@@ -22,16 +22,16 @@ export default function KatalogPage() {
           {entries.length} gemerkte Produkte
         </p>
         <p className="mt-2 text-sm text-muted">
-          Was du auf die Liste setzt, merkt sich LifeRoutine im Hintergrund.
-          Beim nächsten Mal tippst du nur noch an — statt neu zu tippen.
+          Was du auf die Liste setzt, merkt sich LifeRoutine. Beim nächsten Mal
+          wählst du es aus der Liste — oder tippst einen neuen Namen.
         </p>
       </section>
 
       {entries.length === 0 ? (
         <div className="mt-4 rounded-2xl border border-dashed border-line bg-white/60 px-4 py-6 text-center">
           <p className="text-sm text-muted">
-            Noch leer. Unter Liste etwas hinzufügen — dann erscheint es hier und
-            zum Antippen.
+            Noch leer. Unter Liste etwas hinzufügen — dann kannst du es dort aus
+            der Liste wählen.
           </p>
           <Link
             href="/einkauf"
