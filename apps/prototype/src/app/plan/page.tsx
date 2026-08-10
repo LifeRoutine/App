@@ -170,7 +170,16 @@ export default function PlanPage() {
             {label}
             {id === "termine" ? (
               <span className="ml-1 opacity-80">
-                ({state.events.filter((e) => eventDateISO(e, today) >= today).length})
+                (
+                {
+                  expandEventsForRange(
+                    state.events,
+                    today,
+                    addDaysISO(today, 6),
+                    today,
+                  ).length
+                }
+                )
               </span>
             ) : (
               <span className="ml-1 opacity-80">({state.documents.length})</span>
@@ -181,83 +190,64 @@ export default function PlanPage() {
 
       {tab === "termine" ? (
         <>
-          {/* Wochenübersicht — Haupteinstieg */}
-          <section className="space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="font-display text-lg font-semibold text-ink">
-                Diese Woche
+          <section className="rounded-2xl border border-line bg-white/80 px-3 py-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <h2 className="font-display text-base font-semibold text-ink">
+                Woche
               </h2>
               <button
                 type="button"
                 onClick={() => setShowMonth((v) => !v)}
                 className="text-xs font-semibold text-muted underline"
               >
-                {showMonth ? "Monat ausblenden" : "Monatsraster"}
+                {showMonth ? "Monat zu" : "Monat"}
               </button>
             </div>
-
-            {weekDays.map((iso) => {
-              const events = eventsByDate.get(iso) ?? [];
-              const active = iso === selected;
-              const weekday = new Date(`${iso}T12:00:00`).toLocaleDateString(
-                "de-DE",
-                { weekday: "short" },
-              );
-              const dayNum = Number(iso.slice(8));
-              return (
-                <button
-                  key={iso}
-                  type="button"
-                  onClick={() => selectDay(iso)}
-                  className={`w-full rounded-2xl border px-3 py-3 text-left transition ${
-                    active
-                      ? "border-green bg-mint/70"
-                      : "border-line bg-white/80 hover:bg-sand/40"
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-12 shrink-0 text-center">
-                      <p className="text-[0.65rem] font-semibold uppercase text-muted">
-                        {weekday}
-                      </p>
-                      <p className="font-display text-xl font-semibold text-ink">
-                        {dayNum}
-                      </p>
-                      {iso === today ? (
-                        <p className="text-[0.6rem] font-semibold text-save">
-                          heute
-                        </p>
-                      ) : null}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      {events.length === 0 ? (
-                        <p className="pt-1 text-sm text-muted">Frei</p>
-                      ) : (
-                        <ul className="space-y-1">
-                          {events.map((ev) => (
-                            <li
-                              key={ev.id}
-                              className="flex items-baseline gap-2 text-sm"
-                            >
-                              <span className="shrink-0 font-semibold tabular-nums text-muted">
-                                {ev.time}
-                              </span>
-                              <span className="truncate font-medium text-ink">
-                                {ev.title}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
+            {/* Kompakte Leiste — kein Scroll durch 7 große Karten */}
+            <div className="grid grid-cols-7 gap-1">
+              {weekDays.map((iso) => {
+                const events = eventsByDate.get(iso) ?? [];
+                const active = iso === selected;
+                const weekday = new Date(`${iso}T12:00:00`).toLocaleDateString(
+                  "de-DE",
+                  { weekday: "short" },
+                );
+                return (
+                  <button
+                    key={iso}
+                    type="button"
+                    onClick={() => selectDay(iso)}
+                    className={`rounded-xl px-0.5 py-2 text-center transition ${
+                      active
+                        ? "bg-green text-white"
+                        : iso === today
+                          ? "bg-mint text-save"
+                          : "bg-sand/50 text-ink"
+                    }`}
+                  >
+                    <p className="text-[0.6rem] font-semibold uppercase opacity-80">
+                      {weekday.replace(".", "")}
+                    </p>
+                    <p className="font-display text-lg font-semibold leading-none">
+                      {Number(iso.slice(8))}
+                    </p>
+                    <p
+                      className={`mx-auto mt-1 h-1 w-1 rounded-full ${
+                        events.length > 0
+                          ? active
+                            ? "bg-white"
+                            : "bg-green"
+                          : "bg-transparent"
+                      }`}
+                    />
+                  </button>
+                );
+              })}
+            </div>
           </section>
 
           {showMonth ? (
-            <section className="mt-4 rounded-2xl border border-line bg-white/80 px-3 py-3">
+            <section className="mt-3 rounded-2xl border border-line bg-white/80 px-3 py-3">
               <div className="flex items-center justify-between gap-2">
                 <button
                   type="button"
@@ -322,8 +312,8 @@ export default function PlanPage() {
             </section>
           ) : null}
 
-          {/* Detail gewählter Tag */}
-          <section className="mt-5">
+          {/* Detail gewählter Tag — direkt sichtbar */}
+          <section className="mt-4">
             <div className="flex items-center justify-between gap-2">
               <div>
                 <h2 className="font-display text-lg font-semibold text-ink">
