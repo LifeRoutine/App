@@ -152,18 +152,23 @@ a {
 
 /* PC = gleiche Handy-Ansicht (fester Rahmen), Handy = randlos */
 .device-frame {
+  height: 100dvh;
   min-height: 100dvh;
   display: flex;
   justify-content: center;
   align-items: stretch;
+  overflow: hidden;
 }
 
 .device-shell {
   width: 100%;
   max-width: 26.5rem; /* ~424px — typische App-Spalte */
+  height: 100dvh;
   min-height: 100dvh;
+  max-height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   background: var(--surface);
   box-shadow: none;
 }
@@ -183,6 +188,5 @@ a {
     box-shadow:
       0 0 0 1px rgba(255, 255, 255, 0.6) inset,
       0 18px 48px rgba(44, 62, 74, 0.14);
-    overflow: hidden;
   }
 }

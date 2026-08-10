@@ -59,7 +59,7 @@ export default function RootLayout({
       lang="de"
       className={`${fraunces.variable} ${manrope.variable} h-full antialiased`}
     >
-      <body className="min-h-full font-sans text-ink">
+      <body className="h-dvh overflow-hidden font-sans text-ink">
         <PwaRegister />
         <AppProvider>
           <DeviceFrame>
