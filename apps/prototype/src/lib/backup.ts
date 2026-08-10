@@ -1,3 +1,4 @@
+import { demoWasteEvents } from "@/data/demo-waste-events";
 import { createDefaultState } from "@/lib/mock-data";
 import { ensureNamesInCatalog } from "@/lib/catalog-memory";
 import { normalizePantryItem } from "@/lib/pantry";
@@ -46,8 +47,16 @@ export function hydrateAppState(raw: unknown): AppState {
     ...next.shoppingList.map((i) => i.name),
     ...next.pantry.map((p) => p.name),
   ];
+  const hasWasteIcs = next.events.some((e) => e.source === "ics" || e.icsUid);
+  const events = hasWasteIcs
+    ? next.events
+    : [
+        ...next.events,
+        ...demoWasteEvents.map((e) => normalizePlanEvent(e, localDateISO())),
+      ];
   return {
     ...next,
+    events,
     userCatalog: ensureNamesInCatalog(next.userCatalog, seedNames),
   };
 }

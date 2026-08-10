@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import { WasteBinDot, WasteBinIcon } from "@/components/waste-bin-icon";
 import { useApp } from "@/lib/app-context";
+import { icsToPlanEvents, readIcsFile } from "@/lib/ics";
 import { docTypeLabel } from "@/lib/mock-data";
 import {
   addDaysISO,
@@ -14,6 +16,7 @@ import {
   localDateISO,
 } from "@/lib/plan-dates";
 import type { DocumentType, EventRepeat, PlanEvent } from "@/lib/types";
+import { classifyWasteBin } from "@/lib/waste-bins";
 
 const docTypes = Object.keys(docTypeLabel) as DocumentType[];
 const warnOptions = [
@@ -45,13 +48,24 @@ function monthMatrix(year: number, monthIndex: number): (string | null)[][] {
 }
 
 export default function PlanPage() {
-  const { state, addDocument, removeDocument, addEvent, removeEvent, removeEventSeries, endEventSeries, skipSeriesOccurrence } =
-    useApp();
+  const {
+    state,
+    addDocument,
+    removeDocument,
+    addEvent,
+    removeEvent,
+    removeEventSeries,
+    endEventSeries,
+    skipSeriesOccurrence,
+    importIcsEvents,
+  } = useApp();
   const today = localDateISO();
   const [tab, setTab] = useState<PlanTab>("termine");
   const [selected, setSelected] = useState(today);
   const [showMonth, setShowMonth] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
+  const [icsMsg, setIcsMsg] = useState<string | null>(null);
+  const icsInputRef = useRef<HTMLInputElement>(null);
   const [cursor, setCursor] = useState(() => {
     const [y, m] = today.split("-").map(Number);
     return { year: y, month: m - 1 };
@@ -140,6 +154,23 @@ export default function PlanPage() {
     setShowAdd(false);
   }
 
+  async function onIcsFile(file: File | undefined) {
+    setIcsMsg(null);
+    if (!file) return;
+    const result = await readIcsFile(file);
+    if (!result.ok) {
+      setIcsMsg(result.error);
+      if (icsInputRef.current) icsInputRef.current.value = "";
+      return;
+    }
+    const count = importIcsEvents(icsToPlanEvents(result.events, today));
+    const name = result.calName ? ` „${result.calName}“` : "";
+    setIcsMsg(`${count} Abfuhrtermine geladen${name}.`);
+    if (icsInputRef.current) icsInputRef.current.value = "";
+    const next = result.events.find((e) => e.date >= today) ?? result.events[0];
+    if (next) setSelected(next.date);
+  }
+
   function submitDoc() {
     if (!expiresOn) return;
     if (docType === "sonstiges" && !title.trim()) return;
@@ -201,6 +232,35 @@ export default function PlanPage() {
 
       {tab === "termine" ? (
         <>
+          <section className="mb-3 rounded-2xl border border-dashed border-navy/25 bg-sand/40 px-3 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-ink">Müllkalender</p>
+                <p className="text-xs text-muted">
+                  Demo: Hechingen schon drin. Eigene .ics vom Landkreis lädt
+                  neu.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => icsInputRef.current?.click()}
+                className="rounded-xl bg-navy px-3 py-2 text-xs font-semibold text-white"
+              >
+                Kalender laden
+              </button>
+              <input
+                ref={icsInputRef}
+                type="file"
+                accept=".ics,text/calendar"
+                className="hidden"
+                onChange={(e) => void onIcsFile(e.target.files?.[0])}
+              />
+            </div>
+            {icsMsg ? (
+              <p className="mt-2 text-xs font-semibold text-save">{icsMsg}</p>
+            ) : null}
+          </section>
+
           <section className="rounded-2xl border border-line bg-white/80 px-3 py-3">
             <div className="mb-2 flex items-center justify-between gap-2">
               <h2 className="font-display text-base font-semibold text-ink">
@@ -242,15 +302,32 @@ export default function PlanPage() {
                     <p className="font-display text-lg font-semibold leading-none">
                       {Number(iso.slice(8))}
                     </p>
-                    <p
-                      className={`mx-auto mt-1 h-1 w-1 rounded-full ${
-                        events.length > 0
-                          ? active
-                            ? "bg-white"
-                            : "bg-green"
-                          : "bg-transparent"
-                      }`}
-                    />
+                    <div className="mt-1 flex min-h-[0.375rem] justify-center gap-0.5">
+                      {events.slice(0, 3).map((ev) => {
+                        const bin =
+                          ev.wasteBin ??
+                          (ev.source === "ics"
+                            ? classifyWasteBin(ev.title)
+                            : null);
+                        if (bin) {
+                          return (
+                            <WasteBinDot
+                              key={ev.id}
+                              kind={bin}
+                              active={active}
+                            />
+                          );
+                        }
+                        return (
+                          <span
+                            key={ev.id}
+                            className={`inline-block h-1.5 w-1.5 rounded-full ${
+                              active ? "bg-white" : "bg-green"
+                            }`}
+                          />
+                        );
+                      })}
+                    </div>
                   </button>
                 );
               })}
@@ -452,27 +529,39 @@ export default function PlanPage() {
                   Kein Termin — mit „+ Termin“ anlegen.
                 </p>
               ) : (
-                dayEvents.map((ev) => (
+                dayEvents.map((ev) => {
+                  const bin =
+                    ev.wasteBin ??
+                    (ev.source === "ics" ? classifyWasteBin(ev.title) : null);
+                  return (
                   <article
                     key={ev.id}
                     className="rounded-2xl border border-line bg-white/80 px-4 py-3"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
+                      <div className="flex min-w-0 items-start gap-2.5">
+                        {bin ? (
+                          <WasteBinIcon kind={bin} size={26} className="mt-0.5 shrink-0" />
+                        ) : null}
+                        <div className="min-w-0">
                         <p className="text-sm font-semibold text-ink">
-                          <span className="text-muted">{ev.time}</span>
-                          {" · "}
+                          {bin ? null : (
+                            <span className="text-muted">{ev.time} · </span>
+                          )}
                           {ev.title}
                         </p>
                         {ev.detail ? (
                           <p className="mt-1 text-sm text-muted">{ev.detail}</p>
                         ) : null}
                         <p className="mt-1 text-[0.65rem] font-semibold uppercase tracking-wide text-green">
-                          {eventVisibilityLabel[ev.visibility ?? "shared"]}
+                          {bin
+                            ? "Müllkalender"
+                            : eventVisibilityLabel[ev.visibility ?? "shared"]}
                           {ev.repeat && ev.repeat !== "none"
                             ? ` · ${eventRepeatLabel[ev.repeat]}`
                             : ""}
                         </p>
+                        </div>
                       </div>
                       <div className="flex shrink-0 flex-col items-end gap-1">
                         {ev.seriesId ? (
@@ -535,7 +624,8 @@ export default function PlanPage() {
                       </div>
                     </div>
                   </article>
-                ))
+                  );
+                })
               )}
             </div>
           </section>

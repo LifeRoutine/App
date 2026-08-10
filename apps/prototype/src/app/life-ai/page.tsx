@@ -33,11 +33,43 @@ function getSpeechRecognition(): (new () => SpeechRecognitionLike) | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
+function isStandalonePwa(): boolean {
+  if (typeof window === "undefined") return false;
+  const nav = window.navigator as Navigator & { standalone?: boolean };
+  return (
+    nav.standalone === true ||
+    window.matchMedia("(display-mode: standalone)").matches
+  );
+}
+
+function voiceSupportHint(): string | null {
+  if (typeof window === "undefined") return null;
+  if (!getSpeechRecognition()) {
+    return "Spracheingabe hier nicht verfügbar — bitte tippen (Chrome/Edge geht am besten).";
+  }
+  if (isStandalonePwa()) {
+    const ios =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    if (ios) {
+      return "Vom Startbildschirm (iPhone) blockiert Apple oft das Mikrofon. In Safari unter der Website öffnen — oder tippen.";
+    }
+  }
+  if (
+    !window.isSecureContext &&
+    window.location.hostname !== "localhost"
+  ) {
+    return "Mikrofon braucht HTTPS. Bitte tippen.";
+  }
+  return null;
+}
+
 export default function LifeAiPage() {
   const { addShopItems, toggleRoutine, state } = useApp();
   const [input, setInput] = useState("");
   const [listening, setListening] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [voiceHint, setVoiceHint] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const [thread, setThread] = useState<Reply[]>([
     {
@@ -48,6 +80,7 @@ export default function LifeAiPage() {
   ]);
 
   useEffect(() => {
+    setVoiceHint(voiceSupportHint());
     return () => {
       try {
         recognitionRef.current?.stop();
@@ -198,14 +231,28 @@ export default function LifeAiPage() {
     };
     recognition.onerror = (event) => {
       setListening(false);
+      if (
+        isStandalonePwa() &&
+        (event.error === "not-allowed" ||
+          event.error === "service-not-allowed" ||
+          event.error === "aborted")
+      ) {
+        setVoiceError(
+          "Mikrofon in der installierten App oft blockiert. In Chrome/Safari als Website öffnen — oder tippen.",
+        );
+        return;
+      }
       const map: Record<string, string> = {
-        "not-allowed": "Mikrofon-Zugriff verweigert — in den Browser-Einstellungen erlauben.",
+        "not-allowed":
+          "Mikrofon-Zugriff verweigert — in den Browser-Einstellungen erlauben.",
         "no-speech": "Nichts gehört — bitte nochmal tippen oder sprechen.",
         "audio-capture": "Kein Mikrofon gefunden.",
-        network: "Spracherkennung-Netzwerkfehler — bitte tippen.",
+        network:
+          "Spracherkennung braucht Internet (läuft über den Browser) — bitte tippen.",
         aborted: "",
       };
-      const msg = map[event.error] ?? `Spracheingabe fehlgeschlagen (${event.error}).`;
+      const msg =
+        map[event.error] ?? `Spracheingabe fehlgeschlagen (${event.error}).`;
       if (msg) setVoiceError(msg);
     };
     recognition.onend = () => {
@@ -299,9 +346,11 @@ export default function LifeAiPage() {
       </form>
       {voiceError ? (
         <p className="mt-2 text-sm font-medium text-warn">{voiceError}</p>
+      ) : voiceHint ? (
+        <p className="mt-2 text-sm text-muted">{voiceHint}</p>
       ) : (
         <p className="mt-2 text-xs text-muted">
-          Mikrofon-Button: sprechen. Geht nicht? Einfach tippen.
+          Grüner Button: sprechen (Chrome/Edge am zuverlässigsten). Sonst tippen.
         </p>
       )}
     </AppShell>

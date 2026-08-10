@@ -159,6 +159,8 @@ type AppContextValue = {
   endEventSeries: (seriesId: string, lastDateInclusive: string) => void;
   /** Einzelnen Serientermin auslassen */
   skipSeriesOccurrence: (seriesId: string, dateISO: string) => void;
+  /** Müllkalender (.ics) importieren — ersetzt vorherige ICS-Termine */
+  importIcsEvents: (events: PlanEvent[]) => number;
   resetDemo: () => void;
   importBackup: (next: AppState) => void;
 };
@@ -1050,6 +1052,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [update],
   );
 
+  const importIcsEvents = useCallback(
+    (incoming: PlanEvent[]) => {
+      const today = localDateISO();
+      const normalized = incoming.map((e) => normalizePlanEvent(e, today));
+      update((prev) => ({
+        ...prev,
+        events: [
+          ...prev.events.filter((e) => e.source !== "ics" && !e.icsUid),
+          ...normalized,
+        ],
+      }));
+      return normalized.length;
+    },
+    [update],
+  );
+
   const resetDemo = useCallback(() => {
     const fresh = createDefaultState();
     const seeded = {
@@ -1118,6 +1136,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     removeEventSeries,
     endEventSeries,
     skipSeriesOccurrence,
+    importIcsEvents,
     resetDemo,
     importBackup,
   };

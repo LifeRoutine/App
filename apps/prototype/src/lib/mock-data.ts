@@ -1,3 +1,4 @@
+import { demoWasteEvents } from "@/data/demo-waste-events";
 import type {
   AppState,
   DocumentDeadline,
@@ -417,7 +418,7 @@ export function createDefaultState(): AppState {
     routines: structuredClone(
       defaultRoutines.map((r) => ({ ...r, visibility: "shared" as const })),
     ),
-    events: structuredClone(withDates),
+    events: structuredClone([...withDates, ...demoWasteEvents]),
     documents: structuredClone(defaultDocuments),
     pantry: structuredClone(defaultPantry),
     mealPlan: structuredClone(defaultMealPlan),

@@ -41,10 +41,11 @@ Stand: 2026-08-09
 - Angebote: kein Scraping; Crowdsource/OCR-Prospektfoto = optionale Stufe nach P1.
 
 ## Routinen / Müllkalender
-- Stefan: Abfuhrtermine kommen aus dem **Müllkalender des Landkreises/der Kommune** — **jedes Gebiet anders** (Portal, App, PDF, iCal, …).
-- **Kein Scraping** und keine „eine API für ganz DE“ erfinden.
-- Prototyp jetzt: manuelle Routine „Müll rausstellen“ / Nutzer markiert erledigt.
-- Später sinnvoll: Nutzer trägt Ort/Landkreis → **offizielle Quelle** (Link, iCal/ICS falls vorhanden, oder manuelle Termine) — pro Region Adapter, nicht generisch raten.
+- Stefan: Abfuhrtermine kommen aus dem **Müllkalender des Landkreis/der Kommune** — **jedes Gebiet anders**.
+- **Kein Scraping** — Nutzer lädt selbst (.ics / Link / manuell).
+- **ICS-Import (2026-08-10):** Plan → „Müllkalender laden“; ersetzt vorherige ICS-Termine; Tonnen-Symbole (Rest/Bio/Gelb/Papier/Elektro/…).
+- Beispiel-Datei Stefan: Abfall+ `landstrasse19hechingen.ics` (Landstraße 19, Hechingen).
+- Prototyp: auch manuelle Routine „Müll rausstellen“.
 
 
 
@@ -96,6 +97,9 @@ Stand: 2026-08-09
 - Architektur: `OfferProvider` (`lib/offers/`) — Demo-Katalog **leer** (nichts erfinden); später Partner.
 - Nutzer kann Angebot **selbst aus Prospekt markieren** (`source: user`).
 - Prospekt **verlinken** unter Märkte.
+- **Zielbild (Stefan, 2026-08-10):** strukturierte Angebotsdaten auf **eigenem Server** (Produktname, Preis, Markt, Gültigkeit) — App konsumiert Feed, kein Foto-OCR als Dauerlösung.
+- Weg dorthin: erst Link + selbst markieren → optional lokales Prospektfoto → **Partner-/Aggregator-Feed** (selektiv anschreiben, nicht Massen-Scraping) → dann „Prospekte bei uns“.
+- Foto-OCR nur als Zwischenbrücke; Crowdsource nur opt-in + rechtlich geprüft.
 - Vorrat: unter Mindestvorrat + Kaufen-Angebot → „Nachkaufen lohnt“.
 - Status-PDF: `docs/LifeRoutine_Funktionsstand_2026-08-09.pdf`
 - Märkte-Fallback: nur **Nominatim-belegte** Adressen (Hechingen/Stein); kein Netto in Hechingen; keine erfundenen Öffnungszeiten.

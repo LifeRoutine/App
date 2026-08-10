@@ -65,6 +65,15 @@ export type Routine = {
 
 export type EventRepeat = "none" | "weekly" | "biweekly" | "monthly";
 
+export type WasteBinKind =
+  | "rest"
+  | "bio"
+  | "gelb"
+  | "papier"
+  | "elektro"
+  | "sperr"
+  | "other";
+
 export type PlanEvent = {
   id: string;
   title: string;
@@ -89,6 +98,12 @@ export type PlanEvent = {
   repeatUntil?: string;
   /** Einzelne Tage aus der Serie auslassen */
   skipDates?: string[];
+  /** Herkunft: manuell oder Müllkalender (.ics) */
+  source?: "manual" | "ics";
+  /** UID aus ICS — für erneuten Import ohne Duplikate */
+  icsUid?: string;
+  /** Abfall-Tonne (aus Kalender-Titel) */
+  wasteBin?: WasteBinKind;
 };
 
 export type DocumentType =

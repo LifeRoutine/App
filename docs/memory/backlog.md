@@ -15,6 +15,7 @@ Stand: 2026-08-09 · inkl. Abgleich Gemini-Empfehlungen
 - [x] Bis dahin: keine LLM-Erwartung in der UI versprechen
 - [x] Termine: „Wer sieht das?“ (Für alle / Nur für mich / Nur mit Partner) statt Art/Routine/Privat
 - [x] Listen-Namen im Hintergrund merken + antippen (Barcode optional — mit Testern klären)
+- [ ] Spracheingabe: im Web/PWA oft wackelig (Browser/iOS); **echte App später** mit nativer Mic-API — Stefan ok damit
 
 ## P3 — Validierung
 - [x] Online-Deploy (Vercel) für Tester — Anleitung: `docs/Deploy-Tester.md` (Repo `LifeRoutine/App`, Root `apps/prototype`)
@@ -28,8 +29,10 @@ Stand: 2026-08-09 · inkl. Abgleich Gemini-Empfehlungen
 
 ## Angebote ohne teure API (Zwischenwege)
 - [x] Prospekt verlinken + selbst markieren
-- [ ] Optional später: Prospekt-/Preisschild-Foto → OCR → Angebot (crowdsourced, opt-in Teilen)
+- [ ] Optional später: Prospekt-/Preisschild-Foto → OCR lokal (Brücke, nicht Ziel)
 - [ ] Favoriten-Produkte → Direktlink Prospekt des gewählten Marktes
+- [ ] **Ziel:** strukturierte Prospekt-/Angebotsdaten auf eigenem Server (Partner-Feed); Ketten selektiv anschreiben, kein Scraping
+- [x] Müll: Nutzer lädt selbst (.ics) → Plan mit Tonnen-Symbolen (Abfall+/Kommunen)
 
 ## USP schärfen
 - [ ] Stärker: Vorrat/Mindestvorrat ↔ Routinen/Fristen automatisch verknüpfen (nicht nur Liste)
