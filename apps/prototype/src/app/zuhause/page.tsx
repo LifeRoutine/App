@@ -10,14 +10,14 @@ export default function ZuhausePage() {
   const open = state.routines.filter((r) => !r.done).length;
 
   return (
-    <AppShell title="Zuhause" subtitle="Routinen — wenige, die heute zählen">
+    <AppShell title="Zuhause" subtitle="Was im Haushalt noch ansteht">
       <section className="panel-soft animate-rise rounded-3xl px-5 py-5">
         <p className="panel-kicker text-sm">Haushalt</p>
         <p className="mt-1 font-display text-xl font-semibold text-ink">
-          {open} offene Routinen
+          {open} offene Aufgaben
         </p>
         <p className="mt-2 text-sm text-muted">
-          Abhaken speichert lokal. Vorräte & Essen liegen unter Einkauf.
+          Abhaken genügt. Einkaufen und Vorräte findest du unter Einkauf.
         </p>
       </section>
 
@@ -34,7 +34,7 @@ export default function ZuhausePage() {
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="Neue Routine…"
+          placeholder="z. B. Bad putzen…"
           className="flex-1 rounded-2xl border border-line bg-white px-3 py-2.5 text-sm outline-none ring-green/30 focus:ring-2"
         />
         <button

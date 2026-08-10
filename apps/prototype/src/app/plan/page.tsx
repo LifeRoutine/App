@@ -149,7 +149,7 @@ export default function PlanPage() {
   }
 
   return (
-    <AppShell title="Plan" subtitle="Termine & Fristen">
+    <AppShell title="Plan" subtitle="Termine eintragen · Fristen merken">
       <div className="mb-4 grid grid-cols-2 gap-2">
         {(
           [
@@ -388,7 +388,7 @@ export default function PlanPage() {
                 </label>
                 <label className="block">
                   <span className="text-xs font-semibold text-muted">
-                    Wiederholen
+                    Wiederholen?
                   </span>
                   <select
                     value={evRepeat}
@@ -426,9 +426,7 @@ export default function PlanPage() {
                   disabled={!evTitle.trim()}
                   className="w-full rounded-2xl bg-green px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
                 >
-                  {evRepeat === "none"
-                    ? "Speichern"
-                    : "Serie speichern"}
+                  {evRepeat === "none" ? "Speichern" : "Wiederholung speichern"}
                 </button>
               </div>
             ) : null}
@@ -474,14 +472,14 @@ export default function PlanPage() {
                               }
                               className="text-xs font-semibold text-muted underline"
                             >
-                              Diesen auslassen
+                              Diesen Tag streichen
                             </button>
                             <button
                               type="button"
                               onClick={() => {
                                 if (
                                   window.confirm(
-                                    "Serie beenden? Ab diesem Termin keine weiteren Wiederholungen.",
+                                    "Wiederholung stoppen? Ab diesem Tag kommt der Termin nicht mehr.",
                                   )
                                 ) {
                                   endEventSeries(
@@ -492,14 +490,14 @@ export default function PlanPage() {
                               }}
                               className="text-xs font-semibold text-muted underline"
                             >
-                              Serie beenden
+                              Nicht mehr wiederholen
                             </button>
                             <button
                               type="button"
                               onClick={() => {
                                 if (
                                   window.confirm(
-                                    "Ganze Serie löschen (alle Termine)?",
+                                    "Alle Termine dieser Wiederholung löschen?",
                                   )
                                 ) {
                                   removeEventSeries(ev.seriesId!);
@@ -507,7 +505,7 @@ export default function PlanPage() {
                               }}
                               className="text-xs font-semibold text-muted underline"
                             >
-                              Serie löschen
+                              Alle löschen
                             </button>
                           </>
                         ) : (

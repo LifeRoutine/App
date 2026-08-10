@@ -43,7 +43,7 @@ export default function LifeAiPage() {
     {
       user: "",
       assistant:
-        "Regel-Assistent (kein ChatGPT): z. B. „Tomaten kaufen“, „Milch auf die Liste“, „Müll erledigt“.",
+        "Ich helfe bei Liste, Müll und Terminen. Schreib z. B.: „Tomaten kaufen“ oder „Müll ist erledigt“.",
     },
   ]);
 
@@ -143,7 +143,7 @@ export default function LifeAiPage() {
     return {
       user: raw,
       assistant:
-        "Verstanden — z. B. „Tomaten kaufen“, „Milch auf die Liste“ oder „Müll ist erledigt“. Oder einen Vorschlag tippen.",
+        "Verstanden — z. B. „Tomaten kaufen“ oder „Müll ist erledigt“. Oder tippe ein Beispiel oben an.",
     };
   }
 
@@ -222,7 +222,7 @@ export default function LifeAiPage() {
   }
 
   return (
-    <AppShell title="LifeAI" subtitle="Regel-Assistent · kein LLM-Chat">
+    <AppShell title="Helfer" subtitle="Einfach tippen, was erledigt werden soll">
       <section className="animate-rise space-y-3">
         {thread.map((msg, i) => (
           <div key={`${msg.user}-${i}`} className="space-y-2">
@@ -248,7 +248,7 @@ export default function LifeAiPage() {
 
       <section className="mt-5">
         <p className="mb-2 text-xs font-semibold tracking-wide text-muted uppercase">
-          Vorschläge
+          Beispiele zum Antippen
         </p>
         <div className="flex flex-wrap gap-2">
           {lifeAiSuggestions.map((s) => (
@@ -275,12 +275,12 @@ export default function LifeAiPage() {
           rows={2}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Sag LifeRoutine, was du brauchst…"
+          placeholder="z. B. Tomaten kaufen…"
           className="min-h-[3.2rem] flex-1 resize-none rounded-2xl border border-line bg-white/85 px-3 py-2.5 text-sm outline-none ring-green/40 focus:ring-2"
         />
         <button
           type="button"
-          aria-label={listening ? "Höre zu…" : "Spracheingabe"}
+          aria-label={listening ? "Höre zu…" : "Sprechen"}
           aria-pressed={listening}
           className={`grid h-12 w-12 shrink-0 place-items-center rounded-full text-white ${
             listening ? "bg-navy mic-pulse" : "bg-green"
@@ -301,8 +301,7 @@ export default function LifeAiPage() {
         <p className="mt-2 text-sm font-medium text-warn">{voiceError}</p>
       ) : (
         <p className="mt-2 text-xs text-muted">
-          Mikrofon: echte Browser-Spracherkennung (de-DE). Über http://IP oft
-          blockiert — dann tippen.
+          Mikrofon-Button: sprechen. Geht nicht? Einfach tippen.
         </p>
       )}
     </AppShell>

@@ -26,18 +26,18 @@ export default function EinkaufPage() {
   } = useApp();
 
   return (
-    <AppShell title="Einkauf" subtitle="Nicht nur Liste — Entscheidungshilfe">
+    <AppShell title="Einkauf" subtitle="Liste · Märkte · Vorräte · Essen">
       <section className="hero-einkauf animate-rise rounded-3xl px-5 py-5">
-        <p className="text-sm text-mint/95">Sichtbarer Nutzen</p>
+        <p className="text-sm text-mint/95">Deine Liste</p>
         <p className="mt-1 font-display text-2xl font-semibold">
           Heute bis zu{" "}
           {visibleOffersSavings.toFixed(2).replace(".", ",")} € sparen
         </p>
         <p className="mt-2 text-sm text-white/85">
-          Bevorzugte Märkte: {preferredStoreLabels}
+          Deine Märkte: {preferredStoreLabels}
         </p>
         <p className="mt-1 text-xs text-white/75">
-          Demo-Katalog oder selbst aus dem Prospekt markieren.
+          Angebot selbst aus dem Prospekt eintragen — oder ohne Preis weiter.
         </p>
         <Link
           href="/einkauf/maerkte"
@@ -76,11 +76,10 @@ export default function EinkaufPage() {
       {shoppingTrip.length > 0 ? (
         <section className="mt-4 rounded-2xl border border-line bg-white/80 px-4 py-4">
           <h2 className="font-display text-lg font-semibold text-ink">
-            Kluge Route
+            Reihenfolge der Märkte
           </h2>
           <p className="mt-1 text-sm text-muted">
-            Nur Stopps, die für offene Angebote in deinen Märkten zählen —
-            sortiert nach Entfernung.
+            Wohin zuerst — mit dem, was dort draufsteht.
           </p>
           <ol className="mt-3 space-y-2">
             {shoppingTrip.map((stop, i) => (
@@ -108,7 +107,7 @@ export default function EinkaufPage() {
       {extraweg.length > 0 ? (
         <section className="mt-4 space-y-2">
           <h2 className="font-display text-lg font-semibold text-ink">
-            Lohnt sich der Extraweg?
+            Lohnt sich der Umweg?
           </h2>
           {extraweg.map((a) => (
             <article
@@ -196,7 +195,7 @@ export default function EinkaufPage() {
                           : item.source === "meal"
                             ? "Essensplan"
                             : item.source === "ai"
-                              ? "LifeAI"
+                              ? "Helfer"
                               : item.source === "receipt"
                                 ? "Beleg"
                                 : "Tipp"}

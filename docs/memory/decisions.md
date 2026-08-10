@@ -1,4 +1,4 @@
-# Entscheidungen – LifeRoutine
+﻿# Entscheidungen – LifeRoutine
 
 Stand: 2026-08-09
 
@@ -17,8 +17,13 @@ Stand: 2026-08-09
 - Nicht: Habit-Tracker, reine Familien-App, Prospekt-App.
 - Schwestermarke zu AquaRoutine: Kreispfeil/Haken, Navy/Grün, „Routine“; LifeRoutine mit Haus-Symbol statt Aqua-Welle.
 
+## UX-Prinzip (Stefan, 2026-08-10)
+- **Alles selbst erklaerend** — Hausfrauen/Hausmaenner haben keine Zeit und Lust, sich reinzudenken.
+- Kurze Alltagssprache, kein Entwickler-/Produkt-Jargon.
+- Eine Handlung = klarer Button; Beispiele in Platzhaltern; wenig scrollen.
+
 ## Informationsarchitektur (5 Bereiche)
-- **Heute** · **Einkauf** · **Zuhause** · **Plan** · **LifeAI**
+- **Heute** · **Einkauf** · **Zuhause** · **Plan** · **Helfer** (Route /life-ai)
 - LifeAI ist verbindende Schicht, kein separater Chatbot.
 - **Gemini-Abgleich 2026-08-09:** „AI“ weckt LLM-Erwartung. Kurzfristig eher umbenennen (LifeAssist/Schnell-Aktionen) oder klar als Regel-Assistent labeln; echtes Freitext-LLM erst bewusst (P2).
 

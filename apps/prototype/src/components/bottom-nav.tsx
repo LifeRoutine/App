@@ -8,7 +8,7 @@ const items = [
   { href: "/einkauf", label: "Einkauf", icon: CartIcon },
   { href: "/zuhause", label: "Zuhause", icon: HomeIcon },
   { href: "/plan", label: "Plan", icon: PlanIcon },
-  { href: "/life-ai", label: "LifeAI", icon: AiIcon },
+  { href: "/life-ai", label: "Helfer", icon: AiIcon },
 ] as const;
 
 export function BottomNav() {

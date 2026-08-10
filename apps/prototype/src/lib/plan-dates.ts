@@ -60,10 +60,10 @@ export const eventKindLabel: Record<PlanEvent["kind"], string> = {
 };
 
 export const eventRepeatLabel: Record<EventRepeat, string> = {
-  none: "Einmalig",
-  weekly: "Wöchentlich",
+  none: "Nur einmal",
+  weekly: "Jede Woche",
   biweekly: "Alle 2 Wochen",
-  monthly: "Monatlich",
+  monthly: "Jeden Monat",
 };
 
 function stepRepeat(cur: string, repeat: EventRepeat): string {

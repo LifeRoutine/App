@@ -57,7 +57,7 @@ export default function HeutePage() {
         <div className="mt-4 grid grid-cols-2 gap-2">
           <div className="rounded-2xl bg-white/15 px-3 py-2.5">
             <p className="text-[0.65rem] uppercase tracking-wide text-white/75">
-              Sichtbar sparen
+              Angebote heute
             </p>
             <p className="font-display text-xl font-semibold">
               {visibleOffersSavings.toFixed(2).replace(".", ",")} €
@@ -65,7 +65,7 @@ export default function HeutePage() {
           </div>
           <div className="rounded-2xl bg-white/15 px-3 py-2.5">
             <p className="text-[0.65rem] uppercase tracking-wide text-white/75">
-              Zeit zurück
+              Zeit gespart
             </p>
             <p className="font-display text-xl font-semibold">
               ~{minutesSaved} Min.
@@ -75,10 +75,7 @@ export default function HeutePage() {
         <div className="mt-3 flex flex-wrap gap-2 text-xs">
           <span className="rounded-full bg-white/20 px-3 py-1">
             {weather.location}: {weather.tempC} °C, {weather.condition}
-            {weather.source === "demo" ? " · Demo" : ""}
-          </span>
-          <span className="rounded-full bg-white/20 px-3 py-1">
-            Autopilot: Erinnern
+            {weather.source === "demo" ? " · Beispielwetter" : ""}
           </span>
         </div>
       </section>
@@ -86,11 +83,10 @@ export default function HeutePage() {
       {dayInsights.length > 0 ? (
         <section className="mt-5">
           <h2 className="font-display text-lg font-semibold text-ink">
-            LifeRoutine verbindet
+            Hinweise für heute
           </h2>
           <p className="mt-1 text-sm text-muted">
-            Andere Apps speichern Listen. Hier entstehen Entscheidungen aus
-            Zusammenhängen.
+            Was zusammenhängt — kurz und klar.
           </p>
           <div className="mt-3 space-y-2">
             {dayInsights.map((insight) => (
@@ -168,10 +164,10 @@ export default function HeutePage() {
       >
         <div>
           <p className="font-display text-lg font-semibold text-ink">
-            Frag LifeAI
+            Frag den Helfer
           </p>
           <p className="text-sm text-muted">
-            Ein Satz — Einkauf, Plan und Zuhause reagieren mit.
+            Einfach tippen: z. B. „Tomaten kaufen“.
           </p>
         </div>
         <span className="mic-pulse grid h-11 w-11 place-items-center rounded-full bg-green text-white">
