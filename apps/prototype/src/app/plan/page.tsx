@@ -8,10 +8,11 @@ import {
   addDaysISO,
   eventDateISO,
   eventKindLabel,
+  eventRepeatLabel,
   formatDayHeading,
   localDateISO,
 } from "@/lib/plan-dates";
-import type { DocumentType, PlanEvent } from "@/lib/types";
+import type { DocumentType, EventRepeat, PlanEvent } from "@/lib/types";
 
 const docTypes = Object.keys(docTypeLabel) as DocumentType[];
 const warnOptions = [
@@ -39,7 +40,8 @@ function monthMatrix(year: number, monthIndex: number): (string | null)[][] {
 }
 
 export default function PlanPage() {
-  const { state, addDocument, removeDocument, addEvent, removeEvent } = useApp();
+  const { state, addDocument, removeDocument, addEvent, removeEvent, removeEventSeries } =
+    useApp();
   const today = localDateISO();
   const [tab, setTab] = useState<PlanTab>("termine");
   const [selected, setSelected] = useState(today);
@@ -54,6 +56,8 @@ export default function PlanPage() {
   const [evTime, setEvTime] = useState("18:00");
   const [evKind, setEvKind] = useState<PlanEvent["kind"]>("termin");
   const [evDetail, setEvDetail] = useState("");
+  const [evRepeat, setEvRepeat] = useState<EventRepeat>("none");
+  const [evUntil, setEvUntil] = useState("");
 
   const [title, setTitle] = useState("");
   const [docType, setDocType] = useState<DocumentType>("personalausweis");
@@ -111,9 +115,13 @@ export default function PlanPage() {
       time: evTime,
       kind: evKind,
       detail: evDetail,
+      repeat: evRepeat,
+      repeatUntil: evRepeat === "none" ? undefined : evUntil || undefined,
     });
     setEvTitle("");
     setEvDetail("");
+    setEvRepeat("none");
+    setEvUntil("");
     setShowAdd(false);
   }
 
@@ -380,13 +388,49 @@ export default function PlanPage() {
                     className="mt-1 w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm outline-none ring-green/30 focus:ring-2"
                   />
                 </label>
+                <label className="block">
+                  <span className="text-xs font-semibold text-muted">
+                    Wiederholen
+                  </span>
+                  <select
+                    value={evRepeat}
+                    onChange={(e) =>
+                      setEvRepeat(e.target.value as EventRepeat)
+                    }
+                    className="mt-1 w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm"
+                  >
+                    {(Object.keys(eventRepeatLabel) as EventRepeat[]).map(
+                      (r) => (
+                        <option key={r} value={r}>
+                          {eventRepeatLabel[r]}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </label>
+                {evRepeat !== "none" ? (
+                  <label className="block">
+                    <span className="text-xs font-semibold text-muted">
+                      Bis Datum (optional, sonst ca. 6 Monate)
+                    </span>
+                    <input
+                      type="date"
+                      value={evUntil}
+                      min={selected}
+                      onChange={(e) => setEvUntil(e.target.value)}
+                      className="mt-1 w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm"
+                    />
+                  </label>
+                ) : null}
                 <button
                   type="button"
                   onClick={submitEvent}
                   disabled={!evTitle.trim()}
                   className="w-full rounded-2xl bg-green px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
                 >
-                  Speichern
+                  {evRepeat === "none"
+                    ? "Speichern"
+                    : "Serie speichern"}
                 </button>
               </div>
             ) : null}
@@ -414,15 +458,37 @@ export default function PlanPage() {
                         ) : null}
                         <p className="mt-1 text-[0.65rem] font-semibold uppercase tracking-wide text-green">
                           {eventKindLabel[ev.kind]}
+                          {ev.repeat && ev.repeat !== "none"
+                            ? ` · ${eventRepeatLabel[ev.repeat]}`
+                            : ""}
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removeEvent(ev.id)}
-                        className="shrink-0 text-xs font-semibold text-muted underline"
-                      >
-                        Löschen
-                      </button>
+                      <div className="flex shrink-0 flex-col items-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => removeEvent(ev.id)}
+                          className="text-xs font-semibold text-muted underline"
+                        >
+                          Löschen
+                        </button>
+                        {ev.seriesId ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  "Ganze Serie löschen (alle Wiederholungen)?",
+                                )
+                              ) {
+                                removeEventSeries(ev.seriesId!);
+                              }
+                            }}
+                            className="text-xs font-semibold text-muted underline"
+                          >
+                            Serie löschen
+                          </button>
+                        ) : null}
+                      </div>
                     </div>
                   </article>
                 ))

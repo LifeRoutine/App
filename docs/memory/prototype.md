@@ -14,7 +14,7 @@ Pfad: `C:\LifeRoutine\apps\prototype`
 - Barcode: Katalog → OFF → manuell merken (primär auf der Liste)
 - Haushalt: Mitglieder, Einladungs-Code, Beitritt-Demo (`/haushalt`)
 - Zuhause: Routinen + neue hinzufügen
-- Plan: Kalender (Monatsansicht) + Termine selbst eintragen/löschen + Dokumente & Fristen CRUD
+- Plan: Kalender mit Wochenübersicht, Termine inkl. **Wiederholung** (wöchentlich/2-wöchentlich/monatlich), Fristen CRUD
 - LifeAI: Phrasen wie „Tomaten kaufen“ → Liste; Regel-Assistent
 - Einstellungen: Name, Typ, Ort + **JSON-Backup**, **PWA-Install**, **App-PIN**, Links Haushalt/Märkte/Angebote/Katalog/Datenschutz
 - Datenschutz-Seite: was lokal liegt, Backup-Hinweis, PIN, Löschen

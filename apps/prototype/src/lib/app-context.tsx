@@ -51,6 +51,7 @@ import {
 import {
   dayOffsetFromDate,
   eventDateISO,
+  expandRepeatDates,
   localDateISO,
   normalizePlanEvent,
 } from "@/lib/plan-dates";
@@ -146,8 +147,12 @@ type AppContextValue = {
     time: string;
     kind?: PlanEvent["kind"];
     detail?: string;
+    repeat?: PlanEvent["repeat"];
+    repeatUntil?: string;
   }) => void;
   removeEvent: (id: string) => void;
+  /** Serie komplett löschen (alle Termine mit gleicher seriesId) */
+  removeEventSeries: (seriesId: string) => void;
   resetDemo: () => void;
   importBackup: (next: AppState) => void;
 };
@@ -909,26 +914,40 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       time: string;
       kind?: PlanEvent["kind"];
       detail?: string;
+      repeat?: PlanEvent["repeat"];
+      repeatUntil?: string;
     }) => {
       const title = input.title.trim();
       if (!title || !input.date) return;
       const today = localDateISO();
-      const ev: PlanEvent = normalizePlanEvent(
-        {
-          id: `ev-${Date.now()}`,
-          title,
-          time: input.time || "12:00",
-          date: input.date,
-          dayOffset: dayOffsetFromDate(input.date, today),
-          kind: input.kind ?? "termin",
-          detail: input.detail?.trim() || "Selbst eingetragen.",
-          visibility: "shared",
-        },
-        today,
+      const repeat = input.repeat ?? "none";
+      const dates = expandRepeatDates(input.date, repeat, input.repeatUntil);
+      const seriesId =
+        repeat === "none" ? undefined : `series-${Date.now()}`;
+      const baseDetail = input.detail?.trim() || "Selbst eingetragen.";
+      const created = dates.map((date, index) =>
+        normalizePlanEvent(
+          {
+            id: `ev-${Date.now()}-${index}`,
+            title,
+            time: input.time || "12:00",
+            date,
+            dayOffset: dayOffsetFromDate(date, today),
+            kind: input.kind ?? "termin",
+            detail:
+              repeat === "none"
+                ? baseDetail
+                : `${baseDetail}${baseDetail.endsWith(".") ? "" : "."} Wiederholung.`,
+            visibility: "shared",
+            seriesId,
+            repeat,
+          },
+          today,
+        ),
       );
       update((prev) => ({
         ...prev,
-        events: [...prev.events, ev].sort((a, b) => {
+        events: [...prev.events, ...created].sort((a, b) => {
           const da = eventDateISO(a, today).localeCompare(eventDateISO(b, today));
           if (da !== 0) return da;
           return a.time.localeCompare(b.time);
@@ -943,6 +962,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       update((prev) => ({
         ...prev,
         events: prev.events.filter((e) => e.id !== id),
+      }));
+    },
+    [update],
+  );
+
+  const removeEventSeries = useCallback(
+    (seriesId: string) => {
+      update((prev) => ({
+        ...prev,
+        events: prev.events.filter((e) => e.seriesId !== seriesId),
       }));
     },
     [update],
@@ -1006,6 +1035,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     removeDocument,
     addEvent,
     removeEvent,
+    removeEventSeries,
     resetDemo,
     importBackup,
   };

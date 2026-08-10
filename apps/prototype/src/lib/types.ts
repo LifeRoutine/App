@@ -63,6 +63,8 @@ export type Routine = {
   visibility?: "shared" | "private";
 };
 
+export type EventRepeat = "none" | "weekly" | "biweekly" | "monthly";
+
 export type PlanEvent = {
   id: string;
   title: string;
@@ -74,6 +76,9 @@ export type PlanEvent = {
   kind: "termin" | "routine" | "essen" | "privat";
   detail: string;
   visibility?: "shared" | "private";
+  /** Gleiche Serie bei Wiederholung */
+  seriesId?: string;
+  repeat?: EventRepeat;
 };
 
 export type DocumentType =
