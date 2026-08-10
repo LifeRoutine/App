@@ -16,6 +16,9 @@ Stand: 2026-08-09 · inkl. Abgleich Gemini-Empfehlungen
 - [x] Termine: „Wer sieht das?“ (Für alle / Nur für mich / Nur mit Partner) statt Art/Routine/Privat
 - [x] Listen-Namen im Hintergrund merken + antippen (Barcode optional — mit Testern klären)
 - [ ] Spracheingabe: im Web/PWA oft wackelig (Browser/iOS); **echte App später** mit nativer Mic-API — Stefan ok damit
+- [ ] Kassenzettel-Foto/OCR: schwierig am Handy — nochmal testen; Hinweis in UI
+- [x] Schulferien nach Bundesland (ferien-api.de)
+- [x] Urlaub pro Person farblich im Plan
 
 ## P3 — Validierung
 - [x] Online-Deploy (Vercel) für Tester — Anleitung: `docs/Deploy-Tester.md` (Repo `LifeRoutine/App`, Root `apps/prototype`)

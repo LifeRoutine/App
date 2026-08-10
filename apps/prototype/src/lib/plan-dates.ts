@@ -124,7 +124,7 @@ export function datesInRangeForRepeat(
   return out;
 }
 
-/** Termine für Anzeige: Serien-Master expandieren, Einmaltermine übernehmen. */
+/** Termine für Anzeige: Serien-Master expandieren, Mehrtages- und Einmaltermine. */
 export function expandEventsForRange(
   events: PlanEvent[],
   fromISO: string,
@@ -155,6 +155,7 @@ export function expandEventsForRange(
               ...e,
               id: `${e.seriesId ?? e.id}:${date}`,
               date,
+              endDate: undefined,
               seriesMaster: false,
               detail: e.detail,
             },
@@ -167,8 +168,28 @@ export function expandEventsForRange(
 
     // Legacy-Instanzen / Einmaltermine (kein Master)
     if (e.seriesMaster) continue;
-    if (start >= fromISO && start <= toISO) {
-      out.push(normalizePlanEvent(e, todayISO));
+
+    const end = e.endDate && e.endDate >= start ? e.endDate : start;
+    if (end < fromISO || start > toISO) continue;
+
+    let cur = start < fromISO ? fromISO : start;
+    const last = end > toISO ? toISO : end;
+    let guard = 0;
+    while (cur <= last && guard < 400) {
+      out.push(
+        normalizePlanEvent(
+          {
+            ...e,
+            id: e.endDate && e.endDate !== start ? `${e.id}:${cur}` : e.id,
+            date: cur,
+            endDate: e.endDate,
+            seriesMaster: false,
+          },
+          todayISO,
+        ),
+      );
+      cur = addDaysISO(cur, 1);
+      guard++;
     }
   }
   return out.sort((a, b) => {

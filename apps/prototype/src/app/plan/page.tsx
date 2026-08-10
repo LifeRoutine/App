@@ -14,7 +14,15 @@ import {
   expandEventsForRange,
   formatDayHeading,
   localDateISO,
+  normalizePlanEvent,
 } from "@/lib/plan-dates";
+import {
+  BUNDESLAENDER,
+  SCHOOL_HOLIDAY_COLOR,
+  bundeslandName,
+  formatSchoolHolidayTitle,
+  type SchoolHolidayPeriod,
+} from "@/lib/school-holidays";
 import type { DocumentType, EventRepeat, PlanEvent } from "@/lib/types";
 import { classifyWasteBin } from "@/lib/waste-bins";
 
@@ -32,6 +40,22 @@ const visibilityOptions: NonNullable<PlanEvent["visibility"]>[] = [
 
 type PlanTab = "termine" | "fristen";
 
+/** Expandierte Mehrtages-IDs: `id:YYYY-MM-DD` → Basis-ID zum Löschen. */
+function baseEventId(id: string): string {
+  const m = id.match(/^(.*):(\d{4}-\d{2}-\d{2})$/);
+  return m?.[1] ?? id;
+}
+
+function eventBarColor(
+  ev: PlanEvent,
+  members: { id: string; color: string }[],
+): string | null {
+  if (ev.source === "school") return SCHOOL_HOLIDAY_COLOR;
+  if (ev.memberId) {
+    return members.find((m) => m.id === ev.memberId)?.color ?? null;
+  }
+  return null;
+}
 function monthMatrix(year: number, monthIndex: number): (string | null)[][] {
   const first = new Date(year, monthIndex, 1);
   const startPad = (first.getDay() + 6) % 7;
@@ -53,11 +77,13 @@ export default function PlanPage() {
     addDocument,
     removeDocument,
     addEvent,
+    addVacation,
     removeEvent,
     removeEventSeries,
     endEventSeries,
     skipSeriesOccurrence,
     importIcsEvents,
+    importSchoolHolidays,
   } = useApp();
   const today = localDateISO();
   const [tab, setTab] = useState<PlanTab>("termine");
@@ -79,6 +105,19 @@ export default function PlanPage() {
   const [evRepeat, setEvRepeat] = useState<EventRepeat>("none");
   const [evUntil, setEvUntil] = useState("");
 
+  const [ferienState, setFerienState] = useState(
+    state.profile.schoolHolidayState || "BW",
+  );
+  const [ferienBusy, setFerienBusy] = useState(false);
+  const [ferienMsg, setFerienMsg] = useState<string | null>(null);
+
+  const [vacMemberId, setVacMemberId] = useState(
+    () => state.members[0]?.id ?? "",
+  );
+  const [vacStart, setVacStart] = useState(today);
+  const [vacEnd, setVacEnd] = useState(today);
+  const [vacTitle, setVacTitle] = useState("");
+  const [vacMsg, setVacMsg] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [docType, setDocType] = useState<DocumentType>("personalausweis");
   const [person, setPerson] = useState(state.members[0]?.name ?? "Ich");
@@ -169,6 +208,74 @@ export default function PlanPage() {
     if (icsInputRef.current) icsInputRef.current.value = "";
     const next = result.events.find((e) => e.date >= today) ?? result.events[0];
     if (next) setSelected(next.date);
+  }
+
+  async function loadSchoolHolidays() {
+    setFerienBusy(true);
+    setFerienMsg(null);
+    try {
+      const res = await fetch(
+        `/api/school-holidays?state=${encodeURIComponent(ferienState)}`,
+      );
+      const data = (await res.json()) as {
+        error?: string;
+        periods?: SchoolHolidayPeriod[];
+        state?: string;
+      };
+      if (!res.ok || !data.periods) {
+        setFerienMsg(data.error || "Ferien konnten nicht geladen werden.");
+        return;
+      }
+      const events: PlanEvent[] = data.periods.map((p) => {
+        const slug = (p.slug || `${p.name}-${p.start}`).replace(/\s+/g, "-");
+        return normalizePlanEvent(
+          {
+            id: `school-${slug}`,
+            title: formatSchoolHolidayTitle(p.name),
+            time: "00:00",
+            date: p.start.slice(0, 10),
+            endDate: p.end.slice(0, 10),
+            dayOffset: 0,
+            kind: "termin",
+            detail: `Schulferien · ${bundeslandName(ferienState)}`,
+            visibility: "shared",
+            source: "school",
+            icsUid: slug,
+            repeat: "none",
+          },
+          today,
+        );
+      });
+      const n = importSchoolHolidays(events, ferienState);
+      setFerienMsg(
+        `${n} Ferienzeiten für ${bundeslandName(ferienState)} geladen (ferien-api.de).`,
+      );
+    } catch {
+      setFerienMsg("Keine Verbindung — später nochmal versuchen.");
+    } finally {
+      setFerienBusy(false);
+    }
+  }
+
+  function submitVacation() {
+    setVacMsg(null);
+    if (!vacMemberId || !vacStart || !vacEnd) {
+      setVacMsg("Person und Zeitraum wählen.");
+      return;
+    }
+    if (vacEnd < vacStart) {
+      setVacMsg("Ende darf nicht vor dem Start liegen.");
+      return;
+    }
+    addVacation({
+      memberId: vacMemberId,
+      startDate: vacStart,
+      endDate: vacEnd,
+      title: vacTitle.trim() || undefined,
+    });
+    setVacTitle("");
+    setVacMsg("Urlaub eingetragen — Farbe der Person im Kalender.");
+    setSelected(vacStart);
   }
 
   function submitDoc() {
@@ -289,12 +396,18 @@ export default function PlanPage() {
                             />
                           );
                         }
+                        const color = eventBarColor(ev, state.members);
                         return (
                           <span
                             key={ev.id}
-                            className={`inline-block h-1.5 w-1.5 rounded-full ${
-                              active ? "bg-white" : "bg-green"
-                            }`}
+                            className="inline-block h-1.5 w-1.5 rounded-full"
+                            style={{
+                              backgroundColor: color
+                                ? color
+                                : active
+                                  ? "#fff"
+                                  : "#5a9a7a",
+                            }}
                           />
                         );
                       })}
@@ -302,6 +415,132 @@ export default function PlanPage() {
                   </button>
                 );
               })}
+            </div>
+          </section>
+
+          <section className="mt-3 space-y-3 rounded-2xl border border-line bg-white/80 px-3 py-3">
+            <div>
+              <h2 className="font-display text-base font-semibold text-ink">
+                Schulferien
+              </h2>
+              <p className="mt-0.5 text-xs text-muted">
+                Bundesland wählen — Termine aus ferien-api.de (dieses und nächstes
+                Jahr).
+              </p>
+              <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                <select
+                  value={ferienState}
+                  onChange={(e) => setFerienState(e.target.value)}
+                  className="w-full rounded-2xl border border-line bg-white px-3 py-2.5 text-sm"
+                >
+                  {BUNDESLAENDER.map((b) => (
+                    <option key={b.code} value={b.code}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  disabled={ferienBusy}
+                  onClick={() => void loadSchoolHolidays()}
+                  className="shrink-0 rounded-2xl bg-navy px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  {ferienBusy ? "Lädt…" : "Ferien laden"}
+                </button>
+              </div>
+              {ferienMsg ? (
+                <p className="mt-2 text-xs font-semibold text-save">{ferienMsg}</p>
+              ) : state.profile.schoolHolidayState ? (
+                <p className="mt-2 text-xs text-muted">
+                  Geladen: {bundeslandName(state.profile.schoolHolidayState)}{" "}
+                  <span
+                    className="ml-1 inline-block h-2 w-2 rounded-full align-middle"
+                    style={{ backgroundColor: SCHOOL_HOLIDAY_COLOR }}
+                  />
+                </p>
+              ) : null}
+            </div>
+
+            <div className="border-t border-line pt-3">
+              <h2 className="font-display text-base font-semibold text-ink">
+                Eigener Urlaub
+              </h2>
+              <p className="mt-0.5 text-xs text-muted">
+                Pro Person — erscheint farblich wie im Familienkalender.
+              </p>
+              <label className="mt-2 block">
+                <span className="text-xs font-semibold text-muted">Wer</span>
+                <select
+                  value={vacMemberId}
+                  onChange={(e) => setVacMemberId(e.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-line bg-white px-3 py-2.5 text-sm"
+                >
+                  {state.members.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <label className="block">
+                  <span className="text-xs font-semibold text-muted">Von</span>
+                  <input
+                    type="date"
+                    value={vacStart}
+                    onChange={(e) => setVacStart(e.target.value)}
+                    className="mt-1 w-full rounded-2xl border border-line bg-white px-3 py-2.5 text-sm"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-semibold text-muted">Bis</span>
+                  <input
+                    type="date"
+                    value={vacEnd}
+                    min={vacStart}
+                    onChange={(e) => setVacEnd(e.target.value)}
+                    className="mt-1 w-full rounded-2xl border border-line bg-white px-3 py-2.5 text-sm"
+                  />
+                </label>
+              </div>
+              <label className="mt-2 block">
+                <span className="text-xs font-semibold text-muted">
+                  Titel (optional)
+                </span>
+                <input
+                  value={vacTitle}
+                  onChange={(e) => setVacTitle(e.target.value)}
+                  placeholder="z. B. Skifahren"
+                  className="mt-1 w-full rounded-2xl border border-line bg-white px-3 py-2.5 text-sm"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={submitVacation}
+                disabled={!vacMemberId}
+                className="mt-2 w-full rounded-2xl bg-green px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                Urlaub speichern
+              </button>
+              {vacMsg ? (
+                <p className="mt-2 text-xs font-semibold text-save">{vacMsg}</p>
+              ) : null}
+              {state.members.length > 0 ? (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {state.members.map((m) => (
+                    <span
+                      key={m.id}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-2 py-1 text-[0.65rem] font-semibold text-ink"
+                    >
+                      <span
+                        className="inline-block h-2.5 w-2.5 rounded-full"
+                        style={{ backgroundColor: m.color }}
+                      />
+                      {m.name}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </section>
 
@@ -341,8 +580,13 @@ export default function PlanPage() {
                 {matrix.flat().map((iso, idx) => {
                   if (!iso)
                     return <div key={`e-${idx}`} className="aspect-square" />;
-                  const has = (eventsByDate.get(iso)?.length ?? 0) > 0;
+                  const dayList = eventsByDate.get(iso) ?? [];
+                  const has = dayList.length > 0;
                   const on = iso === selected;
+                  const accent =
+                    dayList
+                      .map((ev) => eventBarColor(ev, state.members))
+                      .find(Boolean) ?? null;
                   return (
                     <button
                       key={iso}
@@ -359,9 +603,12 @@ export default function PlanPage() {
                       {Number(iso.slice(8))}
                       {has ? (
                         <span
-                          className={`mx-auto mt-0.5 block h-1 w-1 rounded-full ${
-                            on ? "bg-white" : "bg-green"
-                          }`}
+                          className="mx-auto mt-0.5 block h-1 w-1 rounded-full"
+                          style={{
+                            backgroundColor: on
+                              ? "#fff"
+                              : accent || "#5a9a7a",
+                          }}
                         />
                       ) : null}
                     </button>
@@ -530,19 +777,44 @@ export default function PlanPage() {
                   const bin =
                     ev.wasteBin ??
                     (ev.source === "ics" ? classifyWasteBin(ev.title) : null);
+                  const accent = eventBarColor(ev, state.members);
+                  const memberName = ev.memberId
+                    ? state.members.find((m) => m.id === ev.memberId)?.name
+                    : null;
+                  const rangeLabel =
+                    ev.endDate && ev.date && ev.endDate !== ev.date
+                      ? `${ev.date.slice(8)}.${ev.date.slice(5, 7)}.–${ev.endDate.slice(8)}.${ev.endDate.slice(5, 7)}.`
+                      : null;
                   return (
                   <article
                     key={ev.id}
                     className="rounded-2xl border border-line bg-white/80 px-4 py-3"
+                    style={
+                      accent
+                        ? {
+                            borderLeftWidth: 4,
+                            borderLeftColor: accent,
+                            backgroundColor: `${accent}18`,
+                          }
+                        : undefined
+                    }
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex min-w-0 items-start gap-2.5">
                         {bin ? (
                           <WasteBinIcon kind={bin} size={26} className="mt-0.5 shrink-0" />
+                        ) : accent ? (
+                          <span
+                            className="mt-1 inline-block h-4 w-4 shrink-0 rounded-full"
+                            style={{ backgroundColor: accent }}
+                            aria-hidden
+                          />
                         ) : null}
                         <div className="min-w-0">
                         <p className="text-sm font-semibold text-ink">
-                          {bin ? null : (
+                          {bin ||
+                          ev.source === "school" ||
+                          ev.source === "vacation" ? null : (
                             <span className="text-muted">{ev.time} · </span>
                           )}
                           {ev.title}
@@ -553,7 +825,12 @@ export default function PlanPage() {
                         <p className="mt-1 text-[0.65rem] font-semibold uppercase tracking-wide text-green">
                           {bin
                             ? "Müllkalender"
-                            : eventVisibilityLabel[ev.visibility ?? "shared"]}
+                            : ev.source === "school"
+                              ? "Schulferien"
+                              : ev.source === "vacation"
+                                ? `Urlaub${memberName ? ` · ${memberName}` : ""}`
+                                : eventVisibilityLabel[ev.visibility ?? "shared"]}
+                          {rangeLabel ? ` · ${rangeLabel}` : ""}
                           {ev.repeat && ev.repeat !== "none"
                             ? ` · ${eventRepeatLabel[ev.repeat]}`
                             : ""}
@@ -612,7 +889,7 @@ export default function PlanPage() {
                         ) : (
                           <button
                             type="button"
-                            onClick={() => removeEvent(ev.id)}
+                            onClick={() => removeEvent(baseEventId(ev.id))}
                             className="text-xs font-semibold text-muted underline"
                           >
                             Löschen

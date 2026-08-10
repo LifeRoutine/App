@@ -11,7 +11,7 @@ Pfad: `C:\LifeRoutine\apps\prototype`
 - Katalog: wächst mit **Liste + Scan**; Einträge löschbar; Vorschläge beim Hinzufügen
 - Haushalt: Mitglieder, Einladungs-Code, Beitritt-Demo (`/haushalt`)
 - Zuhause: Routinen + neue hinzufügen
-- Plan: Kalender, Termine, **Müllkalender .ics importieren** (Tonnen-Symbole), Fristen, Sichtbarkeit, Wiederholung
+- Plan: Kalender, Termine, **Müllkalender .ics**, **Schulferien (Bundesland)**, **Urlaub pro Person farblich**, Fristen, Sichtbarkeit, Wiederholung
 - Helfer (`/life-ai`): Phrasen wie „Tomaten kaufen“ → Liste; Alltagssprache
 - Einstellungen: Name, Typ, Ort + **Sicherungskopie**, **PWA-Install**, **App-PIN**, Links Haushalt/Märkte/Angebote/Katalog/Datenschutz
 - Datenschutz-Seite: was lokal liegt, Sicherungskopie, PIN, Löschen

@@ -118,7 +118,8 @@ export function ReceiptCapture({
         <div>
           <p className="font-display text-base font-semibold text-ink">{title}</p>
           <p className="text-[0.65rem] text-muted">
-            Echtes OCR (Tesseract, Deutsch) — ohne Barcode
+            Foto → Text lesen (OCR). Am Handy oft schwierig (Licht/Schärfe) —
+            wir testen das noch. Notfalls Positionen tippen.
           </p>
         </div>
         <button

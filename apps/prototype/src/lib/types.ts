@@ -78,8 +78,10 @@ export type PlanEvent = {
   id: string;
   title: string;
   time: string;
-  /** YYYY-MM-DD — bevorzugte Speicherung */
+  /** YYYY-MM-DD — bevorzugte Speicherung / Start bei Mehrtages-Terminen */
   date?: string;
+  /** Letzter Tag inklusiv (Urlaub, Schulferien) */
+  endDate?: string;
   /** Relativ zu „heute“; wird aus date abgeleitet / Legacy */
   dayOffset: number;
   kind: "termin" | "routine" | "essen" | "privat";
@@ -89,6 +91,8 @@ export type PlanEvent = {
    * shared = für alle, private = nur ich, partner = nur mit Partner
    */
   visibility?: "shared" | "private" | "partner";
+  /** Person im Haushalt (Urlaub) — Farbe aus members.color */
+  memberId?: string;
   /** Gleiche Serie bei Wiederholung */
   seriesId?: string;
   /** true = Serien-Regel (wird für Anzeige expandiert, unbegrenzt bis beendet) */
@@ -98,9 +102,9 @@ export type PlanEvent = {
   repeatUntil?: string;
   /** Einzelne Tage aus der Serie auslassen */
   skipDates?: string[];
-  /** Herkunft: manuell oder Müllkalender (.ics) */
-  source?: "manual" | "ics";
-  /** UID aus ICS — für erneuten Import ohne Duplikate */
+  /** Herkunft: manuell, Müll-.ics, Schulferien-API, eigener Urlaub */
+  source?: "manual" | "ics" | "school" | "vacation";
+  /** UID aus ICS / Ferien-Slug — für erneuten Import ohne Duplikate */
   icsUid?: string;
   /** Abfall-Tonne (aus Kalender-Titel) */
   wasteBin?: WasteBinKind;
@@ -193,6 +197,8 @@ export type AppProfile = {
   preferredStoreIds: string[];
   /** Einladungs-Code für den Haushalt (Demo) */
   inviteCode: string;
+  /** Schulferien-Bundesland (ISO-3166-2 Kurzcode, z. B. BW) */
+  schoolHolidayState?: string;
 };
 
 export type AppState = {

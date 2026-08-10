@@ -48,6 +48,7 @@ export function seedDemoHouseholdState(displayName: string): AppState {
       displayName,
       householdType: "paar",
       location: "Hechingen",
+      schoolHolidayState: "BW",
     },
     members: [
       {

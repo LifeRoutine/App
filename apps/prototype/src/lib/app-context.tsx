@@ -174,6 +174,16 @@ type AppContextValue = {
     visibility?: PlanEvent["visibility"];
     repeat?: PlanEvent["repeat"];
     repeatUntil?: string;
+    endDate?: string;
+    memberId?: string;
+    source?: PlanEvent["source"];
+  }) => void;
+  /** Eigenen Urlaub (Mehrtages, Farbe der Person) */
+  addVacation: (input: {
+    memberId: string;
+    startDate: string;
+    endDate: string;
+    title?: string;
   }) => void;
   removeEvent: (id: string) => void;
   /** Serie komplett löschen */
@@ -182,8 +192,10 @@ type AppContextValue = {
   endEventSeries: (seriesId: string, lastDateInclusive: string) => void;
   /** Einzelnen Serientermin auslassen */
   skipSeriesOccurrence: (seriesId: string, dateISO: string) => void;
-  /** Müllkalender (.ics) importieren — ersetzt vorherige ICS-Termine */
+  /** Müllkalender (.ics) importieren — ersetzt vorherige Müll-ICS-Termine */
   importIcsEvents: (events: PlanEvent[]) => number;
+  /** Schulferien laden — ersetzt vorherige Schulferien-Einträge */
+  importSchoolHolidays: (events: PlanEvent[], stateCode: string) => number;
   resetDemo: () => Promise<void>;
   importBackup: (next: AppState) => void;
 };
@@ -1052,6 +1064,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       visibility?: PlanEvent["visibility"];
       repeat?: PlanEvent["repeat"];
       repeatUntil?: string;
+      endDate?: string;
+      memberId?: string;
+      source?: PlanEvent["source"];
     }) => {
       const title = input.title.trim();
       if (!title || !input.date) return;
@@ -1060,6 +1075,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const baseDetail = input.detail?.trim() || "";
       const visibility = input.visibility ?? "shared";
       const kind = input.kind ?? "termin";
+      const endDate =
+        input.endDate && input.endDate >= input.date
+          ? input.endDate
+          : undefined;
 
       if (repeat === "none") {
         const ev = normalizePlanEvent(
@@ -1068,11 +1087,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             title,
             time: input.time || "12:00",
             date: input.date,
+            endDate,
             dayOffset: dayOffsetFromDate(input.date, today),
             kind,
             detail: baseDetail || "Selbst eingetragen.",
             visibility,
             repeat: "none",
+            memberId: input.memberId,
+            source: input.source ?? "manual",
           },
           today,
         );
@@ -1099,6 +1121,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           repeat,
           repeatUntil: input.repeatUntil || undefined,
           skipDates: [],
+          memberId: input.memberId,
+          source: input.source ?? "manual",
         },
         today,
       );
@@ -1106,6 +1130,44 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         events: [...prev.events, master],
       }));
+    },
+    [update],
+  );
+
+  const addVacation = useCallback(
+    (input: {
+      memberId: string;
+      startDate: string;
+      endDate: string;
+      title?: string;
+    }) => {
+      if (!input.memberId || !input.startDate || !input.endDate) return;
+      if (input.endDate < input.startDate) return;
+      update((prev) => {
+        const member = prev.members.find((m) => m.id === input.memberId);
+        if (!member) return prev;
+        const today = localDateISO();
+        const title =
+          input.title?.trim() || `Urlaub ${member.name}`;
+        const ev = normalizePlanEvent(
+          {
+            id: `vac-${Date.now()}`,
+            title,
+            time: "00:00",
+            date: input.startDate,
+            endDate: input.endDate,
+            dayOffset: dayOffsetFromDate(input.startDate, today),
+            kind: "privat",
+            detail: `Urlaub · ${member.name}`,
+            visibility: "shared",
+            memberId: member.id,
+            source: "vacation",
+            repeat: "none",
+          },
+          today,
+        );
+        return { ...prev, events: [...prev.events, ev] };
+      });
     },
     [update],
   );
@@ -1176,7 +1238,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       update((prev) => ({
         ...prev,
         events: [
-          ...prev.events.filter((e) => e.source !== "ics" && !e.icsUid),
+          ...prev.events.filter((e) => e.source !== "ics"),
+          ...normalized,
+        ],
+      }));
+      return normalized.length;
+    },
+    [update],
+  );
+
+  const importSchoolHolidays = useCallback(
+    (incoming: PlanEvent[], stateCode: string) => {
+      const today = localDateISO();
+      const normalized = incoming.map((e) => normalizePlanEvent(e, today));
+      update((prev) => ({
+        ...prev,
+        profile: {
+          ...prev.profile,
+          schoolHolidayState: stateCode,
+        },
+        events: [
+          ...prev.events.filter((e) => e.source !== "school"),
           ...normalized,
         ],
       }));
@@ -1285,11 +1367,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addDocument,
     removeDocument,
     addEvent,
+    addVacation,
     removeEvent,
     removeEventSeries,
     endEventSeries,
     skipSeriesOccurrence,
     importIcsEvents,
+    importSchoolHolidays,
     resetDemo,
     importBackup,
   };

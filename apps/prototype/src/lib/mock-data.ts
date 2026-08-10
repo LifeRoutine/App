@@ -433,6 +433,7 @@ export function createDefaultState(): AppState {
       location: "Hechingen",
       preferredStoreIds: [...DEFAULT_STORE_IDS],
       inviteCode: makeInviteCode(),
+      schoolHolidayState: "BW",
     },
     members: structuredClone(defaultMembers),
     shoppingList: structuredClone(
