@@ -9,6 +9,7 @@ export function DemoLoginGate({ children }: { children: React.ReactNode }) {
   const { ready, authenticated, loginDemo } = useApp();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -50,13 +51,23 @@ export function DemoLoginGate({ children }: { children: React.ReactNode }) {
         </label>
         <label className="block">
           <span className="text-xs font-semibold text-muted">Passwort</span>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            className="mt-1 w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm outline-none ring-green/30 focus:ring-2"
-          />
+          <div className="mt-1 flex gap-2">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              className="min-w-0 flex-1 rounded-2xl border border-line bg-white px-4 py-3 text-sm outline-none ring-green/30 focus:ring-2"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="shrink-0 rounded-2xl border border-line bg-white px-3 py-3 text-xs font-semibold text-ink"
+              aria-pressed={showPassword}
+            >
+              {showPassword ? "Verbergen" : "Zeigen"}
+            </button>
+          </div>
         </label>
         {error ? (
           <p className="text-sm font-semibold text-warn">{error}</p>

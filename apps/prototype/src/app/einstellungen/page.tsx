@@ -187,10 +187,19 @@ export default function EinstellungenPage() {
 
         <button
           type="button"
-          onClick={resetDemo}
+          onClick={() => {
+            if (
+              !window.confirm(
+                "Wirklich alles löschen und von vorne beginnen? (Liste, Plan, Vorräte …)",
+              )
+            ) {
+              return;
+            }
+            void resetDemo();
+          }}
           className="w-full text-center text-xs text-muted underline"
         >
-          Alles zurücksetzen und neu starten
+          Alles löschen und von vorne beginnen
         </button>
       </section>
     </AppShell>

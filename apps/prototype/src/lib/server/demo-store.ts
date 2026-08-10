@@ -101,3 +101,13 @@ export async function saveHouseholdState(
   await writeLocal(householdId, state);
   return "local";
 }
+
+/** Frischen Demo-Stand schreiben (Hechingen + Müll). */
+export async function resetHouseholdState(
+  householdId: string,
+  displayName: string,
+): Promise<{ state: AppState; store: StoreKind }> {
+  const seeded = seedDemoHouseholdState(displayName);
+  const store = await saveHouseholdState(householdId, seeded);
+  return { state: seeded, store };
+}

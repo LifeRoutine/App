@@ -184,7 +184,7 @@ type AppContextValue = {
   skipSeriesOccurrence: (seriesId: string, dateISO: string) => void;
   /** Müllkalender (.ics) importieren — ersetzt vorherige ICS-Termine */
   importIcsEvents: (events: PlanEvent[]) => number;
-  resetDemo: () => void;
+  resetDemo: () => Promise<void>;
   importBackup: (next: AppState) => void;
 };
 
@@ -1185,29 +1185,45 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [update],
   );
 
-  const resetDemo = useCallback(() => {
+  const resetDemo = useCallback(async () => {
+    try {
+      const res = await fetch("/api/demo/reset", {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = (await res.json()) as {
+        state?: AppState;
+        store?: string;
+      };
+      if (res.ok && data.state) {
+        const hydrated = hydrateAppState(data.state);
+        setState(hydrated);
+        saveState(hydrated);
+        setStorageMode(modeFromStore(data.store));
+        return;
+      }
+    } catch {
+      /* offline — lokal zurücksetzen */
+    }
     const name = demoUser?.displayName ?? "Irena";
     const fresh = createDefaultState();
-    const seeded = {
+    const seeded: AppState = {
       ...fresh,
       profile: {
         ...fresh.profile,
         onboardingDone: true,
         displayName: name,
+        householdType: "paar",
         location: "Hechingen",
       },
       members: [
         {
           id: "m1",
           name,
-          role: "owner" as const,
+          role: "owner",
           color: "#4a6f8c",
         },
       ],
-      userCatalog: ensureNamesInCatalog(fresh.userCatalog, [
-        ...fresh.shoppingList.map((i) => i.name),
-        ...fresh.pantry.map((p) => p.name),
-      ]),
     };
     setState(seeded);
     saveState(seeded);
