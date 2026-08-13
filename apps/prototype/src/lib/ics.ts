@@ -1,11 +1,14 @@
 import type { PlanEvent } from "@/lib/types";
 import { classifyWasteBin, type WasteBinKind } from "@/lib/waste-bins";
-import { dayOffsetFromDate, localDateISO } from "@/lib/plan-dates";
+import { addDaysISO, dayOffsetFromDate, localDateISO } from "@/lib/plan-dates";
 
 export type ParsedIcsEvent = {
   uid: string;
   title: string;
   date: string;
+  /** Letzter Tag inklusiv, wenn Mehrtages-Termin */
+  endDate?: string;
+  time?: string;
   detail: string;
   location?: string;
   wasteBin: WasteBinKind;
@@ -41,6 +44,28 @@ function parseIcsDate(prop: string): string | null {
   return `${m[1]}-${m[2]}-${m[3]}`;
 }
 
+function parseIcsTime(prop: string): string | undefined {
+  const value = prop.includes(":") ? prop.slice(prop.lastIndexOf(":") + 1) : prop;
+  const m = value.match(/T(\d{2})(\d{2})/);
+  if (!m) return undefined;
+  return `${m[1]}:${m[2]}`;
+}
+
+function isDateOnly(prop: string): boolean {
+  const value = prop.includes(":") ? prop.slice(prop.lastIndexOf(":") + 1) : prop;
+  return /^\d{8}$/.test(value) || prop.toUpperCase().includes("VALUE=DATE");
+}
+
+/** DTEND bei ganztägig = erster Tag danach → inklusives Ende. */
+function inclusiveEnd(start: string, endRaw: string, dateOnly: boolean): string | undefined {
+  if (!endRaw) return undefined;
+  let end = endRaw;
+  if (dateOnly && end > start) {
+    end = addDaysISO(end, -1);
+  }
+  return end >= start && end !== start ? end : undefined;
+}
+
 function propName(line: string): string {
   const base = line.split(":")[0] ?? "";
   return (base.split(";")[0] ?? "").toUpperCase();
@@ -68,7 +93,11 @@ export function parseIcsCalendar(text: string): {
   let calName: string | undefined;
   const events: ParsedIcsEvent[] = [];
   let inEvent = false;
-  let cur: Partial<ParsedIcsEvent> & { date?: string } = {};
+  let cur: Partial<ParsedIcsEvent> & {
+    date?: string;
+    endRaw?: string;
+    endDateOnly?: boolean;
+  } = {};
 
   for (const line of lines) {
     const name = propName(line);
@@ -86,6 +115,11 @@ export function parseIcsCalendar(text: string): {
           uid: cur.uid?.trim() || `ics-${cur.date}-${title}`,
           title,
           date: cur.date,
+          endDate:
+            cur.endRaw && cur.date
+              ? inclusiveEnd(cur.date, cur.endRaw, Boolean(cur.endDateOnly))
+              : undefined,
+          time: cur.time,
           detail: cur.detail?.trim() || "",
           location: cur.location?.trim() || undefined,
           wasteBin: classifyWasteBin(title),
@@ -103,6 +137,14 @@ export function parseIcsCalendar(text: string): {
     if (name === "DTSTART") {
       const d = parseIcsDate(line);
       if (d) cur.date = d;
+      const t = parseIcsTime(line);
+      if (t) cur.time = t;
+    } else if (name === "DTEND") {
+      const d = parseIcsDate(line);
+      if (d) {
+        cur.endRaw = d;
+        cur.endDateOnly = isDateOnly(line);
+      }
     } else if (name === "SUMMARY") {
       cur.title = value;
     } else if (name === "DESCRIPTION") {
@@ -137,6 +179,33 @@ export function icsToPlanEvents(
     source: "ics" as const,
     icsUid: p.uid,
     wasteBin: p.wasteBin,
+  }));
+}
+
+/** Schul-/Klassenkalender → PlanEvent, ohne Müll-Tonnen. */
+export function icsToSchoolCalEvents(
+  parsed: ParsedIcsEvent[],
+  memberId: string,
+  memberName: string,
+  todayISO = localDateISO(),
+): PlanEvent[] {
+  const stamp = Date.now();
+  return parsed.map((p, i) => ({
+    id: `schoolcal-${memberId}-${stamp}-${i}`,
+    title: p.title,
+    time: p.time || "00:00",
+    date: p.date,
+    endDate: p.endDate,
+    dayOffset: dayOffsetFromDate(p.date, todayISO),
+    kind: "termin" as const,
+    detail:
+      [p.detail, p.location].filter(Boolean).join(" · ") ||
+      `Schulkalender · ${memberName}`,
+    visibility: "shared" as const,
+    repeat: "none" as const,
+    source: "schoolcal" as const,
+    memberId,
+    icsUid: p.uid,
   }));
 }
 

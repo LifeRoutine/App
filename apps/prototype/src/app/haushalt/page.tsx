@@ -20,6 +20,7 @@ export default function HaushaltPage() {
     ready,
   } = useApp();
   const [name, setName] = useState("");
+  const [addRole, setAddRole] = useState<"adult" | "child">("adult");
   const [joinCode, setJoinCode] = useState("");
   const [joinName, setJoinName] = useState("");
   const [joinMsg, setJoinMsg] = useState<string | null>(null);
@@ -27,7 +28,7 @@ export default function HaushaltPage() {
 
   function invite() {
     if (!name.trim()) return;
-    addMember(name, "adult");
+    addMember(name, addRole);
     setName("");
   }
 
@@ -120,10 +121,36 @@ export default function HaushaltPage() {
         </ul>
 
         <div className="mt-3 flex gap-2">
+          <button
+            type="button"
+            onClick={() => setAddRole("adult")}
+            className={`rounded-xl px-3 py-2 text-xs font-semibold ${
+              addRole === "adult"
+                ? "bg-mint text-save"
+                : "border border-line bg-white text-muted"
+            }`}
+          >
+            Erwachsen
+          </button>
+          <button
+            type="button"
+            onClick={() => setAddRole("child")}
+            className={`rounded-xl px-3 py-2 text-xs font-semibold ${
+              addRole === "child"
+                ? "bg-mint text-save"
+                : "border border-line bg-white text-muted"
+            }`}
+          >
+            Kind
+          </button>
+        </div>
+        <div className="mt-2 flex gap-2">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Name hinzufügen"
+            placeholder={
+              addRole === "child" ? "Name des Kindes" : "Name hinzufügen"
+            }
             className="min-w-0 flex-1 rounded-2xl border border-line bg-white px-4 py-3 text-sm outline-none ring-green/30 focus:ring-2"
             onKeyDown={(e) => {
               if (e.key === "Enter") invite();

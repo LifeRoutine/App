@@ -47,7 +47,7 @@ export function hydrateAppState(raw: unknown): AppState {
     ...next.shoppingList.map((i) => i.name),
     ...next.pantry.map((p) => p.name),
   ];
-  const hasWasteIcs = next.events.some((e) => e.source === "ics" || e.icsUid);
+  const hasWasteIcs = next.events.some((e) => e.source === "ics");
   const events = hasWasteIcs
     ? next.events
     : [

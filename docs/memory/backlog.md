@@ -18,6 +18,7 @@ Stand: 2026-08-09 · inkl. Abgleich Gemini-Empfehlungen
 - [ ] Spracheingabe: im Web/PWA oft wackelig (Browser/iOS); **echte App später** mit nativer Mic-API — Stefan ok damit
 - [ ] Kassenzettel-Foto/OCR: schwierig am Handy — nochmal testen; Hinweis in UI
 - [x] Schulferien nach Bundesland (ferien-api.de)
+- [x] Schulkalender der Kinder (.ics, Farbe der Person)
 - [x] Urlaub pro Person farblich im Plan
 - [x] Heute: echte Tagespunkte (Müll, Frist, Urlaub, Liste, Essen) statt €/Min
 - [x] Erinnerungen (beim Öffnen der App; ehrlich: kein Hintergrund-Wecker)

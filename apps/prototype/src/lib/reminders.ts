@@ -73,6 +73,12 @@ export function collectReminderLines(
         title: "Heute Urlaub",
         body: ev.title,
       });
+    } else if (ev.source === "schoolcal") {
+      lines.push({
+        id: `sc-${ev.id}`,
+        title: "Heute Schule",
+        body: ev.title,
+      });
     } else if (ev.source !== "school") {
       const time = ev.time && ev.time !== "00:00" ? `${ev.time} ` : "";
       lines.push({

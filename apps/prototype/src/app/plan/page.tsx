@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { WasteBinDot, WasteBinIcon } from "@/components/waste-bin-icon";
 import { useApp } from "@/lib/app-context";
-import { icsToPlanEvents, readIcsFile } from "@/lib/ics";
+import { icsToPlanEvents, icsToSchoolCalEvents, readIcsFile } from "@/lib/ics";
 import { docTypeLabel } from "@/lib/mock-data";
 import {
   addDaysISO,
@@ -84,6 +84,7 @@ export default function PlanPage() {
     skipSeriesOccurrence,
     importIcsEvents,
     importSchoolHolidays,
+    importSchoolCalendar,
   } = useApp();
   const today = localDateISO();
   const [tab, setTab] = useState<PlanTab>("termine");
@@ -94,6 +95,14 @@ export default function PlanPage() {
   >(null);
   const [icsMsg, setIcsMsg] = useState<string | null>(null);
   const icsInputRef = useRef<HTMLInputElement>(null);
+  const schoolIcsRef = useRef<HTMLInputElement>(null);
+  const [schoolMemberId, setSchoolMemberId] = useState(
+    () =>
+      state.members.find((m) => m.role === "child")?.id ??
+      state.members[0]?.id ??
+      "",
+  );
+  const [schoolMsg, setSchoolMsg] = useState<string | null>(null);
   const [cursor, setCursor] = useState(() => {
     const [y, m] = today.split("-").map(Number);
     return { year: y, month: m - 1 };
@@ -210,6 +219,31 @@ export default function PlanPage() {
     const name = result.calName ? ` „${result.calName}“` : "";
     setIcsMsg(`${count} Abfuhrtermine geladen${name}.`);
     if (icsInputRef.current) icsInputRef.current.value = "";
+    const next = result.events.find((e) => e.date >= today) ?? result.events[0];
+    if (next) setSelected(next.date);
+  }
+
+  async function onSchoolIcsFile(file: File | undefined) {
+    setSchoolMsg(null);
+    if (!file) return;
+    const member = state.members.find((m) => m.id === schoolMemberId);
+    if (!member) {
+      setSchoolMsg("Zuerst unter Haushalt ein Kind anlegen.");
+      return;
+    }
+    const result = await readIcsFile(file);
+    if (!result.ok) {
+      setSchoolMsg(result.error);
+      if (schoolIcsRef.current) schoolIcsRef.current.value = "";
+      return;
+    }
+    const count = importSchoolCalendar(
+      icsToSchoolCalEvents(result.events, member.id, member.name, today),
+      member.id,
+    );
+    const name = result.calName ? ` „${result.calName}“` : "";
+    setSchoolMsg(`${count} Schultermine für ${member.name} geladen${name}.`);
+    if (schoolIcsRef.current) schoolIcsRef.current.value = "";
     const next = result.events.find((e) => e.date >= today) ?? result.events[0];
     if (next) setSelected(next.date);
   }
@@ -792,6 +826,56 @@ export default function PlanPage() {
                     </p>
                   ) : null}
                 </div>
+                <div className="border-t border-line pt-3">
+                  <p className="text-xs font-semibold text-ink">
+                    Schulkalender der Kinder
+                  </p>
+                  <p className="mt-0.5 text-[0.7rem] text-muted">
+                    .ics von der Schule / Klasse — Farbe des Kindes im Plan.
+                    Kind zuerst unter Haushalt anlegen.
+                  </p>
+                  {state.members.length === 0 ? (
+                    <p className="mt-2 text-xs text-muted">
+                      Noch niemand im Haushalt.
+                    </p>
+                  ) : (
+                    <>
+                      <select
+                        value={schoolMemberId}
+                        onChange={(e) => setSchoolMemberId(e.target.value)}
+                        className="mt-2 w-full rounded-2xl border border-line bg-white px-3 py-2.5 text-sm"
+                      >
+                        {state.members.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.name}
+                            {m.role === "child" ? " (Kind)" : ""}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => schoolIcsRef.current?.click()}
+                        className="mt-2 w-full rounded-2xl bg-navy px-4 py-2.5 text-sm font-semibold text-white"
+                      >
+                        Schulkalender laden (.ics)
+                      </button>
+                      <input
+                        ref={schoolIcsRef}
+                        type="file"
+                        accept=".ics,text/calendar"
+                        className="hidden"
+                        onChange={(e) =>
+                          void onSchoolIcsFile(e.target.files?.[0])
+                        }
+                      />
+                    </>
+                  )}
+                  {schoolMsg ? (
+                    <p className="mt-2 text-xs font-semibold text-save">
+                      {schoolMsg}
+                    </p>
+                  ) : null}
+                </div>
               </div>
             ) : null}
 
@@ -842,7 +926,9 @@ export default function PlanPage() {
                         <p className="text-sm font-semibold text-ink">
                           {bin ||
                           ev.source === "school" ||
-                          ev.source === "vacation" ? null : (
+                          ev.source === "vacation" ||
+                          (ev.source === "schoolcal" &&
+                            (!ev.time || ev.time === "00:00")) ? null : (
                             <span className="text-muted">{ev.time} · </span>
                           )}
                           {ev.title}
@@ -855,6 +941,8 @@ export default function PlanPage() {
                             ? "Müllkalender"
                             : ev.source === "school"
                               ? "Schulferien"
+                              : ev.source === "schoolcal"
+                                ? `Schule${memberName ? ` · ${memberName}` : ""}`
                               : ev.source === "vacation"
                                 ? `Urlaub${memberName ? ` · ${memberName}` : ""}`
                                 : memberName

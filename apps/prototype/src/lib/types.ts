@@ -105,8 +105,8 @@ export type PlanEvent = {
   repeatUntil?: string;
   /** Einzelne Tage aus der Serie auslassen */
   skipDates?: string[];
-  /** Herkunft: manuell, Müll-.ics, Schulferien-API, eigener Urlaub */
-  source?: "manual" | "ics" | "school" | "vacation";
+  /** Herkunft: manuell, Müll-.ics, Schulferien-API, Schulkalender Kind, eigener Urlaub */
+  source?: "manual" | "ics" | "school" | "schoolcal" | "vacation";
   /** UID aus ICS / Ferien-Slug — für erneuten Import ohne Duplikate */
   icsUid?: string;
   /** Abfall-Tonne (aus Kalender-Titel) */

@@ -69,6 +69,18 @@ export function buildTodayAgenda(
       });
       continue;
     }
+    if (ev.source === "schoolcal") {
+      const who =
+        state.members.find((m) => m.id === ev.memberId)?.name ?? "Kind";
+      items.push({
+        id: ev.id,
+        kind: "termin",
+        title: ev.time && ev.time !== "00:00" ? `${ev.time} ${ev.title}` : ev.title,
+        detail: `Schule · ${who}`,
+        href: "/plan",
+      });
+      continue;
+    }
     const who = state.members.find((m) => m.id === ev.memberId)?.name;
     items.push({
       id: ev.id,

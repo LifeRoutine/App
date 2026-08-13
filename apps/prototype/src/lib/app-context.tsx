@@ -219,6 +219,8 @@ type AppContextValue = {
   importIcsEvents: (events: PlanEvent[]) => number;
   /** Schulferien laden — ersetzt vorherige Schulferien-Einträge */
   importSchoolHolidays: (events: PlanEvent[], stateCode: string) => number;
+  /** Schulkalender eines Kindes (.ics) — ersetzt den vorherigen für diese Person */
+  importSchoolCalendar: (events: PlanEvent[], memberId: string) => number;
   resetDemo: () => Promise<void>;
   importBackup: (next: AppState) => void;
 };
@@ -1329,6 +1331,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [update],
   );
 
+  const importSchoolCalendar = useCallback(
+    (incoming: PlanEvent[], memberId: string) => {
+      const today = localDateISO();
+      const normalized = incoming.map((e) => normalizePlanEvent(e, today));
+      update((prev) => ({
+        ...prev,
+        events: [
+          ...prev.events.filter(
+            (e) => !(e.source === "schoolcal" && e.memberId === memberId),
+          ),
+          ...normalized,
+        ],
+      }));
+      return normalized.length;
+    },
+    [update],
+  );
+
   const resetDemo = useCallback(async () => {
     try {
       const res = await fetch("/api/demo/reset", {
@@ -1438,6 +1458,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     skipSeriesOccurrence,
     importIcsEvents,
     importSchoolHolidays,
+    importSchoolCalendar,
     resetDemo,
     importBackup,
   };
