@@ -19,6 +19,9 @@ Stand: 2026-08-09 · inkl. Abgleich Gemini-Empfehlungen
 - [ ] Kassenzettel-Foto/OCR: schwierig am Handy — nochmal testen; Hinweis in UI
 - [x] Schulferien nach Bundesland (ferien-api.de)
 - [x] Urlaub pro Person farblich im Plan
+- [x] Heute: echte Tagespunkte (Müll, Frist, Urlaub, Liste, Essen) statt €/Min
+- [x] Erinnerungen (beim Öffnen der App; ehrlich: kein Hintergrund-Wecker)
+- [x] Plan: drei Aktionen Termin · Urlaub · Kalender laden
 
 ## P3 — Validierung
 - [x] Online-Deploy (Vercel) für Tester — Anleitung: `docs/Deploy-Tester.md` (Repo `LifeRoutine/App`, Root `apps/prototype`)
@@ -48,9 +51,9 @@ Stand: 2026-08-09 · inkl. Abgleich Gemini-Empfehlungen
 Abgeguckt von daely-shop.com; LifeRoutine bleibt App/PWA-Routine, kein Hardware-Konkurrent.
 - [x] **Person-Farbe überall:** Termine + Zuhause-Routinen („Wer?“ / „Wer macht’s?“) — Urlaub schon zuvor
 - [ ] **Kalender-Import (opt-in):** eigene .ics / Google-/Apple-Link vom Nutzer — wie Müllkalender, nichts scrapen
-- [ ] **Erinnerungen:** Push/PWA-Notification vor Termin/Routine/Frist (einfach, alltagssprachlich)
+- [x] **Erinnerungen:** Push/PWA-Notification vor Termin/Routine/Frist (einfach, alltagssprachlich)
 - [ ] **Mehrere Listen:** nicht nur eine Einkaufsliste (z. B. Baumarkt, Reise) — klar getrennt
-- [ ] **Essensplan sichtbarer:** Woche auf einen Blick + „Was gibt’s heute?“ auf Heute
+- [x] **Essensplan sichtbarer:** Woche auf einen Blick + „Was gibt’s heute?“ auf Heute
 - [ ] Später optional: kinderleichtes Abhaken / Punkte — nur wenn Tester Familien mit Kindern priorisieren
 - **Nicht übernehmen:** Wand-Display, Bilderrahmen-Modus, Geräte-Montage, Hardware-Preis
 

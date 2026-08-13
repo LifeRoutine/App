@@ -89,7 +89,9 @@ export default function PlanPage() {
   const [tab, setTab] = useState<PlanTab>("termine");
   const [selected, setSelected] = useState(today);
   const [showMonth, setShowMonth] = useState(false);
-  const [showAdd, setShowAdd] = useState(false);
+  const [composer, setComposer] = useState<
+    null | "termin" | "urlaub" | "kalender"
+  >(null);
   const [icsMsg, setIcsMsg] = useState<string | null>(null);
   const icsInputRef = useRef<HTMLInputElement>(null);
   const [cursor, setCursor] = useState(() => {
@@ -192,7 +194,7 @@ export default function PlanPage() {
     setEvRepeat("none");
     setEvUntil("");
     setEvMemberId("");
-    setShowAdd(false);
+    setComposer(null);
   }
 
   async function onIcsFile(file: File | undefined) {
@@ -278,6 +280,7 @@ export default function PlanPage() {
     setVacTitle("");
     setVacMsg("Urlaub eingetragen — Farbe der Person im Kalender.");
     setSelected(vacStart);
+    setComposer(null);
   }
 
   function submitDoc() {
@@ -420,132 +423,6 @@ export default function PlanPage() {
             </div>
           </section>
 
-          <section className="mt-3 space-y-3 rounded-2xl border border-line bg-white/80 px-3 py-3">
-            <div>
-              <h2 className="font-display text-base font-semibold text-ink">
-                Schulferien
-              </h2>
-              <p className="mt-0.5 text-xs text-muted">
-                Bundesland wählen — Termine aus ferien-api.de (dieses und nächstes
-                Jahr).
-              </p>
-              <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-                <select
-                  value={ferienState}
-                  onChange={(e) => setFerienState(e.target.value)}
-                  className="w-full rounded-2xl border border-line bg-white px-3 py-2.5 text-sm"
-                >
-                  {BUNDESLAENDER.map((b) => (
-                    <option key={b.code} value={b.code}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  disabled={ferienBusy}
-                  onClick={() => void loadSchoolHolidays()}
-                  className="shrink-0 rounded-2xl bg-navy px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-                >
-                  {ferienBusy ? "Lädt…" : "Ferien laden"}
-                </button>
-              </div>
-              {ferienMsg ? (
-                <p className="mt-2 text-xs font-semibold text-save">{ferienMsg}</p>
-              ) : state.profile.schoolHolidayState ? (
-                <p className="mt-2 text-xs text-muted">
-                  Geladen: {bundeslandName(state.profile.schoolHolidayState)}{" "}
-                  <span
-                    className="ml-1 inline-block h-2 w-2 rounded-full align-middle"
-                    style={{ backgroundColor: SCHOOL_HOLIDAY_COLOR }}
-                  />
-                </p>
-              ) : null}
-            </div>
-
-            <div className="border-t border-line pt-3">
-              <h2 className="font-display text-base font-semibold text-ink">
-                Eigener Urlaub
-              </h2>
-              <p className="mt-0.5 text-xs text-muted">
-                Pro Person — erscheint farblich wie im Familienkalender.
-              </p>
-              <label className="mt-2 block">
-                <span className="text-xs font-semibold text-muted">Wer</span>
-                <select
-                  value={vacMemberId}
-                  onChange={(e) => setVacMemberId(e.target.value)}
-                  className="mt-1 w-full rounded-2xl border border-line bg-white px-3 py-2.5 text-sm"
-                >
-                  {state.members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <label className="block">
-                  <span className="text-xs font-semibold text-muted">Von</span>
-                  <input
-                    type="date"
-                    value={vacStart}
-                    onChange={(e) => setVacStart(e.target.value)}
-                    className="mt-1 w-full rounded-2xl border border-line bg-white px-3 py-2.5 text-sm"
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-xs font-semibold text-muted">Bis</span>
-                  <input
-                    type="date"
-                    value={vacEnd}
-                    min={vacStart}
-                    onChange={(e) => setVacEnd(e.target.value)}
-                    className="mt-1 w-full rounded-2xl border border-line bg-white px-3 py-2.5 text-sm"
-                  />
-                </label>
-              </div>
-              <label className="mt-2 block">
-                <span className="text-xs font-semibold text-muted">
-                  Titel (optional)
-                </span>
-                <input
-                  value={vacTitle}
-                  onChange={(e) => setVacTitle(e.target.value)}
-                  placeholder="z. B. Skifahren"
-                  className="mt-1 w-full rounded-2xl border border-line bg-white px-3 py-2.5 text-sm"
-                />
-              </label>
-              <button
-                type="button"
-                onClick={submitVacation}
-                disabled={!vacMemberId}
-                className="mt-2 w-full rounded-2xl bg-green px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-              >
-                Urlaub speichern
-              </button>
-              {vacMsg ? (
-                <p className="mt-2 text-xs font-semibold text-save">{vacMsg}</p>
-              ) : null}
-              {state.members.length > 0 ? (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {state.members.map((m) => (
-                    <span
-                      key={m.id}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-2 py-1 text-[0.65rem] font-semibold text-ink"
-                    >
-                      <span
-                        className="inline-block h-2.5 w-2.5 rounded-full"
-                        style={{ backgroundColor: m.color }}
-                      />
-                      {m.name}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          </section>
-
           {showMonth ? (
             <section className="mt-3 rounded-2xl border border-line bg-white/80 px-3 py-3">
               <div className="flex items-center justify-between gap-2">
@@ -622,62 +499,58 @@ export default function PlanPage() {
 
           {/* Detail gewählter Tag — direkt sichtbar */}
           <section className="mt-4">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <h2 className="font-display text-lg font-semibold text-ink">
-                  {formatDayHeading(selected, today)}
-                </h2>
-                <p className="text-xs text-muted">
-                  {new Date(`${selected}T12:00:00`).toLocaleDateString("de-DE", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowAdd((v) => !v)}
-                className="rounded-2xl bg-navy px-3 py-2 text-xs font-semibold text-white"
-              >
-                {showAdd ? "Schließen" : "+ Termin"}
-              </button>
+            <div>
+              <h2 className="font-display text-lg font-semibold text-ink">
+                {formatDayHeading(selected, today)}
+              </h2>
+              <p className="text-xs text-muted">
+                {new Date(`${selected}T12:00:00`).toLocaleDateString("de-DE", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </p>
+            </div>
+            <div className="mt-2 grid grid-cols-3 gap-1.5">
+              {(
+                [
+                  ["termin", "Termin"],
+                  ["urlaub", "Urlaub"],
+                  ["kalender", "Kalender laden"],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => {
+                    setComposer((c) => {
+                      if (c === id) return null;
+                      if (id === "urlaub") {
+                        setVacStart(selected);
+                        setVacEnd((end) => (end < selected ? selected : end));
+                      }
+                      return id;
+                    });
+                  }}
+                  className={`rounded-2xl px-2 py-2.5 text-center text-[0.7rem] font-semibold leading-tight ${
+                    composer === id
+                      ? "bg-navy text-white"
+                      : "border border-line bg-white text-ink"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
 
-            {showAdd ? (
+            {composer === "termin" ? (
               <div className="mt-3 space-y-3 rounded-2xl border border-line bg-white/90 px-4 py-4">
-                <div className="rounded-xl border border-dashed border-navy/20 bg-sand/50 px-3 py-2.5">
-                  <p className="text-xs font-semibold text-ink">Müllkalender</p>
-                  <p className="mt-0.5 text-[0.7rem] text-muted">
-                    Hechingen ist schon im Plan. Eigene .ics vom Landkreis hier
-                    laden.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => icsInputRef.current?.click()}
-                    className="mt-2 rounded-xl bg-navy px-3 py-2 text-xs font-semibold text-white"
-                  >
-                    Kalender laden (.ics)
-                  </button>
-                  <input
-                    ref={icsInputRef}
-                    type="file"
-                    accept=".ics,text/calendar"
-                    className="hidden"
-                    onChange={(e) => void onIcsFile(e.target.files?.[0])}
-                  />
-                  {icsMsg ? (
-                    <p className="mt-2 text-xs font-semibold text-save">
-                      {icsMsg}
-                    </p>
-                  ) : null}
-                </div>
                 <label className="block">
                   <span className="text-xs font-semibold text-muted">Titel</span>
                   <input
                     value={evTitle}
                     onChange={(e) => setEvTitle(e.target.value)}
-                    placeholder="z. B. Müll rausstellen"
+                    placeholder="z. B. Zahnarzt"
                     className="mt-1 w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm outline-none ring-green/30 focus:ring-2"
                   />
                 </label>
@@ -788,10 +661,144 @@ export default function PlanPage() {
               </div>
             ) : null}
 
+            {composer === "urlaub" ? (
+              <div className="mt-3 space-y-3 rounded-2xl border border-line bg-white/90 px-4 py-4">
+                <p className="text-xs text-muted">
+                  Pro Person — Farbe wie im Familienkalender. Gilt ab dem
+                  gewählten Tag.
+                </p>
+                <label className="block">
+                  <span className="text-xs font-semibold text-muted">Wer</span>
+                  <select
+                    value={vacMemberId}
+                    onChange={(e) => setVacMemberId(e.target.value)}
+                    className="mt-1 w-full rounded-2xl border border-line bg-white px-3 py-2.5 text-sm"
+                  >
+                    {state.members.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="block">
+                    <span className="text-xs font-semibold text-muted">Von</span>
+                    <input
+                      type="date"
+                      value={vacStart}
+                      onChange={(e) => setVacStart(e.target.value)}
+                      className="mt-1 w-full rounded-2xl border border-line bg-white px-3 py-2.5 text-sm"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-xs font-semibold text-muted">Bis</span>
+                    <input
+                      type="date"
+                      value={vacEnd}
+                      min={vacStart}
+                      onChange={(e) => setVacEnd(e.target.value)}
+                      className="mt-1 w-full rounded-2xl border border-line bg-white px-3 py-2.5 text-sm"
+                    />
+                  </label>
+                </div>
+                <label className="block">
+                  <span className="text-xs font-semibold text-muted">
+                    Titel (optional)
+                  </span>
+                  <input
+                    value={vacTitle}
+                    onChange={(e) => setVacTitle(e.target.value)}
+                    placeholder="z. B. Skifahren"
+                    className="mt-1 w-full rounded-2xl border border-line bg-white px-3 py-2.5 text-sm"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={submitVacation}
+                  disabled={!vacMemberId}
+                  className="w-full rounded-2xl bg-green px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  Urlaub speichern
+                </button>
+                {vacMsg ? (
+                  <p className="text-xs font-semibold text-save">{vacMsg}</p>
+                ) : null}
+              </div>
+            ) : null}
+
+            {composer === "kalender" ? (
+              <div className="mt-3 space-y-4 rounded-2xl border border-line bg-white/90 px-4 py-4">
+                <div>
+                  <p className="text-xs font-semibold text-ink">Müllkalender</p>
+                  <p className="mt-0.5 text-[0.7rem] text-muted">
+                    .ics vom Landkreis laden. Hechingen ist schon im Plan.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => icsInputRef.current?.click()}
+                    className="mt-2 rounded-xl bg-navy px-3 py-2 text-xs font-semibold text-white"
+                  >
+                    Datei wählen (.ics)
+                  </button>
+                  <input
+                    ref={icsInputRef}
+                    type="file"
+                    accept=".ics,text/calendar"
+                    className="hidden"
+                    onChange={(e) => void onIcsFile(e.target.files?.[0])}
+                  />
+                  {icsMsg ? (
+                    <p className="mt-2 text-xs font-semibold text-save">
+                      {icsMsg}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="border-t border-line pt-3">
+                  <p className="text-xs font-semibold text-ink">Schulferien</p>
+                  <p className="mt-0.5 text-[0.7rem] text-muted">
+                    Bundesland — Quelle ferien-api.de (dieses und nächstes Jahr).
+                  </p>
+                  <select
+                    value={ferienState}
+                    onChange={(e) => setFerienState(e.target.value)}
+                    className="mt-2 w-full rounded-2xl border border-line bg-white px-3 py-2.5 text-sm"
+                  >
+                    {BUNDESLAENDER.map((b) => (
+                      <option key={b.code} value={b.code}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    disabled={ferienBusy}
+                    onClick={() => void loadSchoolHolidays()}
+                    className="mt-2 w-full rounded-2xl bg-navy px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+                  >
+                    {ferienBusy ? "Lädt…" : "Ferien laden"}
+                  </button>
+                  {ferienMsg ? (
+                    <p className="mt-2 text-xs font-semibold text-save">
+                      {ferienMsg}
+                    </p>
+                  ) : state.profile.schoolHolidayState ? (
+                    <p className="mt-2 text-xs text-muted">
+                      Geladen: {bundeslandName(state.profile.schoolHolidayState)}{" "}
+                      <span
+                        className="ml-1 inline-block h-2 w-2 rounded-full align-middle"
+                        style={{ backgroundColor: SCHOOL_HOLIDAY_COLOR }}
+                      />
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
             <div className="mt-3 space-y-2">
               {dayEvents.length === 0 ? (
                 <p className="text-sm text-muted">
-                  Kein Termin — mit „+ Termin“ anlegen.
+                  Nichts an diesem Tag — Termin, Urlaub oder Kalender laden.
                 </p>
               ) : (
                 dayEvents.map((ev) => {

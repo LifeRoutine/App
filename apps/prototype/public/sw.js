@@ -1,5 +1,5 @@
 /* LifeRoutine PWA — leichter Offline-Cache für Shell */
-const CACHE = "liferoutine-shell-v2";
+const CACHE = "liferoutine-shell-v3";
 const PRECACHE = [
   "/",
   "/manifest.webmanifest",
@@ -19,6 +19,19 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) =>
       Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))),
     ).then(() => self.clients.claim()),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((list) => {
+        const hit = list.find((c) => "focus" in c);
+        if (hit) return hit.focus();
+        return self.clients.openWindow("/");
+      }),
   );
 });
 

@@ -6,6 +6,7 @@ import { DeviceFrame } from "@/components/device-frame";
 import { OnboardingGate } from "@/components/onboarding-gate";
 import { PinGate } from "@/components/pin-gate";
 import { PwaRegister } from "@/components/pwa-register";
+import { ReminderWatch } from "@/components/reminder-watch";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -65,6 +66,7 @@ export default function RootLayout({
           <DeviceFrame>
             <DemoLoginGate>
               <PinGate>
+                <ReminderWatch />
                 <OnboardingGate>{children}</OnboardingGate>
               </PinGate>
             </DemoLoginGate>

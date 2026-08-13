@@ -7,6 +7,7 @@ import { BackupControls } from "@/components/backup-controls";
 import { InstallHint } from "@/components/install-hint";
 import { LocationSearch } from "@/components/location-search";
 import { PinSettings } from "@/components/pin-settings";
+import { ReminderSettings } from "@/components/reminder-settings";
 import { useApp } from "@/lib/app-context";
 import { householdTypeLabel } from "@/lib/mock-data";
 import type { HouseholdType } from "@/lib/types";
@@ -153,6 +154,8 @@ export default function EinstellungenPage() {
             {isGuest ? "Gast beenden" : "Abmelden"}
           </button>
         </section>
+
+        <ReminderSettings />
 
         <PinSettings />
 

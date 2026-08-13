@@ -5,7 +5,9 @@ Pfad: `C:\LifeRoutine\apps\prototype`
 
 ## Funktionierender Lokal-Prototyp
 - Onboarding inkl. Ortssuche (OSM) + GPS
-- Heute: €/Min-Nutzen, Verbund-Insights, Warum, Link Einstellungen
+- Heute: Tagespunkte (Müll, Frist, Urlaub, Liste) + **Was gibt’s heute?**
+- Erinnerungen: Einstellungen → an; Hinweis beim Öffnen (kein Hintergrund-Wecker)
+- Plan: **Termin · Urlaub · Kalender laden** (Müll-ICS + Schulferien)
 - Einkauf: Liste · Märkte · Vorräte · Essen · Katalog · Angebote-Stub
 - Liste: Tippen/Barcode, **bekannte Produkte antippen** (Hintergrund-Speicher), Angebot markieren, Route, Extraweg, privat/geteilt, Erledigt → Vorrat
 - Katalog: wächst mit **Liste + Scan**; Einträge löschbar; Vorschläge beim Hinzufügen
