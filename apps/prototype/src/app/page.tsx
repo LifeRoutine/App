@@ -7,7 +7,7 @@ import { profileSubtitle, useApp } from "@/lib/app-context";
 import { agendaKindLabel, buildTodayAgenda } from "@/lib/today-agenda";
 
 export default function HeutePage() {
-  const { state, weather } = useApp();
+  const { state, weather, cycleMealSuggestion } = useApp();
 
   const weekday = new Intl.DateTimeFormat("de-DE", {
     weekday: "long",
@@ -16,8 +16,9 @@ export default function HeutePage() {
   }).format(new Date());
 
   const steps = useMemo(() => buildTodayAgenda(state), [state]);
-  const meal = steps.find((s) => s.kind === "essen");
+  const mealStep = steps.find((s) => s.kind === "essen");
   const rest = steps.filter((s) => s.kind !== "essen");
+  const todayMeal = state.mealPlan.find((m) => m.dayLabel === "Heute");
 
   return (
     <AppShell
@@ -50,19 +51,29 @@ export default function HeutePage() {
         </p>
       </section>
 
-      {meal ? (
-        <Link
-          href={meal.href}
-          className="mt-3 block rounded-2xl border border-green/25 bg-mint/50 px-3.5 py-3"
-        >
-          <p className="text-[0.7rem] font-semibold tracking-wide text-save uppercase">
-            Was gibt’s heute?
-          </p>
-          <p className="mt-0.5 font-display text-base font-semibold text-ink">
-            {meal.title.replace(/^Heute:\s*/, "")}
-          </p>
-          <p className="mt-0.5 text-sm leading-snug text-muted">{meal.detail}</p>
-        </Link>
+      {mealStep && todayMeal ? (
+        <div className="mt-3 rounded-2xl border border-green/25 bg-mint/50 px-3.5 py-3">
+          <Link href={mealStep.href} className="block">
+            <p className="text-[0.7rem] font-semibold tracking-wide text-save uppercase">
+              Was gibt’s heute?
+            </p>
+            <p className="mt-0.5 font-display text-base font-semibold text-ink">
+              {todayMeal.title}
+            </p>
+            <p className="mt-0.5 text-sm leading-snug text-muted">
+              {todayMeal.missing.length
+                ? `Noch fehlen: ${todayMeal.missing.join(", ")}`
+                : todayMeal.note}
+            </p>
+          </Link>
+          <button
+            type="button"
+            onClick={() => cycleMealSuggestion(todayMeal.id)}
+            className="mt-2 text-xs font-semibold text-navy underline"
+          >
+            Anderer Vorschlag
+          </button>
+        </div>
       ) : null}
 
       <section className="mt-4">
@@ -70,7 +81,7 @@ export default function HeutePage() {
           Als Nächstes
         </h2>
         <div className="mt-2 space-y-2">
-          {rest.length === 0 && !meal ? (
+          {rest.length === 0 && !mealStep ? (
             <p className="rounded-2xl border border-dashed border-line bg-white/70 px-4 py-3 text-sm text-muted">
               Nichts Offenes — gut so.
             </p>

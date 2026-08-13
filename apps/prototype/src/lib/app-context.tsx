@@ -59,6 +59,7 @@ import {
 } from "@/lib/plan-dates";
 import { hydrateAppState } from "@/lib/backup";
 import { makeInviteCode, warnLabelForMonths } from "@/lib/mock-data";
+import { nextMealForDay } from "@/lib/meal-suggestions";
 import { shopListId, type ShopListId } from "@/lib/shop-lists";
 
 const STORAGE_KEY = "liferoutine.app.v1";
@@ -180,6 +181,8 @@ type AppContextValue = {
   removeCatalogEntry: (barcode: string) => void;
   addRoutine: (title: string, memberId?: string) => void;
   addMissingFromMeal: (mealId: string) => number;
+  /** Anderen Menü-Vorschlag für diesen Tag */
+  cycleMealSuggestion: (mealId: string) => void;
   toggleRoutine: (id: string) => void;
   cyclePantryStatus: (id: string) => void;
   addMember: (
@@ -965,6 +968,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [update],
   );
 
+  const cycleMealSuggestion = useCallback(
+    (mealId: string) => {
+      update((prev) => ({
+        ...prev,
+        mealPlan: prev.mealPlan.map((m) =>
+          m.id === mealId ? nextMealForDay(m, prev.pantry) : m,
+        ),
+      }));
+    },
+    [update],
+  );
+
   const toggleRoutine = useCallback(
     (id: string) => {
       update((prev) => ({
@@ -1528,6 +1543,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     removeCatalogEntry,
     addRoutine,
     addMissingFromMeal,
+    cycleMealSuggestion,
     toggleRoutine,
     cyclePantryStatus,
     addMember,

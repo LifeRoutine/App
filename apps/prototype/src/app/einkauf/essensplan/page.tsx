@@ -6,7 +6,7 @@ import { AppShell } from "@/components/app-shell";
 import { useApp } from "@/lib/app-context";
 
 export default function EssensplanPage() {
-  const { state, addMissingFromMeal } = useApp();
+  const { state, addMissingFromMeal, cycleMealSuggestion } = useApp();
   const [flash, setFlash] = useState<string | null>(null);
 
   function pushMissing(mealId: string) {
@@ -21,6 +21,12 @@ export default function EssensplanPage() {
     window.setTimeout(() => setFlash(null), 2200);
   }
 
+  function swap(mealId: string) {
+    cycleMealSuggestion(mealId);
+    setFlash("Anderer Vorschlag.");
+    window.setTimeout(() => setFlash(null), 1600);
+  }
+
   return (
     <AppShell title="Einkauf" subtitle="Essensplan · fehlendes auf die Liste">
       {flash ? (
@@ -28,6 +34,10 @@ export default function EssensplanPage() {
           {flash}
         </p>
       ) : null}
+
+      <p className="mb-3 text-sm text-muted">
+        Passt der Vorschlag nicht? Tippe auf „Anderer Vorschlag“.
+      </p>
 
       <section className="space-y-3">
         {state.mealPlan.map((meal, index) => (
@@ -56,6 +66,13 @@ export default function EssensplanPage() {
             )}
 
             <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => swap(meal.id)}
+                className="rounded-xl border border-line bg-white px-3 py-2 text-xs font-semibold text-ink"
+              >
+                Anderer Vorschlag
+              </button>
               {meal.recipeId ? (
                 <Link
                   href={`/essen/${meal.recipeId}`}
