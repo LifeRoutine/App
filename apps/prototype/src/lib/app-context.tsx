@@ -13,6 +13,7 @@ import {
   householdTypeLabel,
   nearbyStoresHechingen,
   todayWeather,
+  MEMBER_COLORS,
 } from "@/lib/mock-data";
 import {
   buildDayInsights,
@@ -175,7 +176,12 @@ type AppContextValue = {
   addMissingFromMeal: (mealId: string) => number;
   toggleRoutine: (id: string) => void;
   cyclePantryStatus: (id: string) => void;
-  addMember: (name: string, role?: HouseholdMember["role"]) => void;
+  addMember: (
+    name: string,
+    role?: HouseholdMember["role"],
+    color?: string,
+  ) => void;
+  setMemberColor: (id: string, color: string) => void;
   removeMember: (id: string) => void;
   regenerateInvite: () => void;
   joinWithInvite: (code: string, name: string) => boolean;
@@ -1030,10 +1036,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addMember = useCallback(
-    (name: string, role: HouseholdMember["role"] = "adult") => {
+    (
+      name: string,
+      role: HouseholdMember["role"] = "adult",
+      color?: string,
+    ) => {
       const trimmed = name.trim();
       if (!trimmed) return;
-      const colors = ["#4a6f8c", "#5a9a7a", "#8bbfa5", "#9ebfd0", "#6b7c88"];
       update((prev) => ({
         ...prev,
         members: [
@@ -1042,9 +1051,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             id: `m-${Date.now()}`,
             name: trimmed,
             role,
-            color: colors[prev.members.length % colors.length],
+            color:
+              color ||
+              MEMBER_COLORS[prev.members.length % MEMBER_COLORS.length],
           },
         ],
+      }));
+    },
+    [update],
+  );
+
+  const setMemberColor = useCallback(
+    (id: string, color: string) => {
+      update((prev) => ({
+        ...prev,
+        members: prev.members.map((m) =>
+          m.id === id ? { ...m, color } : m,
+        ),
       }));
     },
     [update],
@@ -1445,6 +1468,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     toggleRoutine,
     cyclePantryStatus,
     addMember,
+    setMemberColor,
     removeMember,
     regenerateInvite,
     joinWithInvite,

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useApp } from "@/lib/app-context";
+import { MEMBER_COLORS } from "@/lib/mock-data";
 
 const roleLabel = {
   owner: "Eigentümer",
@@ -10,10 +11,40 @@ const roleLabel = {
   child: "Kind",
 } as const;
 
+function ColorDots({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (color: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5" role="listbox" aria-label="Farbe">
+      {MEMBER_COLORS.map((c) => {
+        const on = value.toLowerCase() === c.toLowerCase();
+        return (
+          <button
+            key={c}
+            type="button"
+            aria-label={`Farbe ${c}`}
+            aria-pressed={on}
+            onClick={() => onChange(c)}
+            className={`h-7 w-7 rounded-full border-2 ${
+              on ? "border-ink" : "border-transparent"
+            }`}
+            style={{ backgroundColor: c }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 export default function HaushaltPage() {
   const {
     state,
     addMember,
+    setMemberColor,
     removeMember,
     regenerateInvite,
     joinWithInvite,
@@ -21,6 +52,7 @@ export default function HaushaltPage() {
   } = useApp();
   const [name, setName] = useState("");
   const [addRole, setAddRole] = useState<"adult" | "child">("adult");
+  const [addColor, setAddColor] = useState<string>(MEMBER_COLORS[0]);
   const [joinCode, setJoinCode] = useState("");
   const [joinName, setJoinName] = useState("");
   const [joinMsg, setJoinMsg] = useState<string | null>(null);
@@ -28,7 +60,7 @@ export default function HaushaltPage() {
 
   function invite() {
     if (!name.trim()) return;
-    addMember(name, addRole);
+    addMember(name, addRole, addColor);
     setName("");
   }
 
@@ -93,29 +125,41 @@ export default function HaushaltPage() {
           {state.members.map((m) => (
             <li
               key={m.id}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-white/80 px-4 py-3"
+              className="rounded-2xl border border-line bg-white/80 px-4 py-3"
+              style={{ borderLeftWidth: 4, borderLeftColor: m.color }}
             >
-              <div className="flex items-center gap-3">
-                <span
-                  className="grid h-9 w-9 place-items-center rounded-full text-sm font-bold text-white"
-                  style={{ background: m.color }}
-                >
-                  {m.name.slice(0, 1).toUpperCase()}
-                </span>
-                <div>
-                  <p className="font-semibold text-ink">{m.name}</p>
-                  <p className="text-xs text-muted">{roleLabel[m.role]}</p>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span
+                    className="grid h-9 w-9 place-items-center rounded-full text-sm font-bold text-white"
+                    style={{ background: m.color }}
+                  >
+                    {m.name.slice(0, 1).toUpperCase()}
+                  </span>
+                  <div>
+                    <p className="font-semibold text-ink">{m.name}</p>
+                    <p className="text-xs text-muted">{roleLabel[m.role]}</p>
+                  </div>
                 </div>
+                {m.role !== "owner" ? (
+                  <button
+                    type="button"
+                    onClick={() => removeMember(m.id)}
+                    className="text-xs font-semibold text-muted underline"
+                  >
+                    Entfernen
+                  </button>
+                ) : null}
               </div>
-              {m.role !== "owner" ? (
-                <button
-                  type="button"
-                  onClick={() => removeMember(m.id)}
-                  className="text-xs font-semibold text-muted underline"
-                >
-                  Entfernen
-                </button>
-              ) : null}
+              <div className="mt-2">
+                <p className="mb-1 text-[0.65rem] font-semibold text-muted">
+                  Farbe
+                </p>
+                <ColorDots
+                  value={m.color}
+                  onChange={(c) => setMemberColor(m.id, c)}
+                />
+              </div>
             </li>
           ))}
         </ul>
@@ -143,6 +187,10 @@ export default function HaushaltPage() {
           >
             Kind
           </button>
+        </div>
+        <p className="mt-3 text-[0.65rem] font-semibold text-muted">Farbe</p>
+        <div className="mt-1">
+          <ColorDots value={addColor} onChange={setAddColor} />
         </div>
         <div className="mt-2 flex gap-2">
           <input

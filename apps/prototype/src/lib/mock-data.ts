@@ -256,6 +256,17 @@ export function makeInviteCode(): string {
   return `LR-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 }
 
+export const MEMBER_COLORS = [
+  "#4a6f8c",
+  "#5a9a7a",
+  "#d46a6a",
+  "#c4a35a",
+  "#7a6b9a",
+  "#3d8a8a",
+  "#d4894a",
+  "#c45d8c",
+] as const;
+
 export const defaultMembers: HouseholdMember[] = [
   { id: "m1", name: "Stefan", role: "owner", color: "#4a6f8c" },
   { id: "m2", name: "Tom", role: "adult", color: "#5a9a7a" },
