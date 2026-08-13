@@ -1,4 +1,5 @@
 import { eventsOnDate, localDateISO } from "@/lib/plan-dates";
+import { itemsOnList, SHOP_LISTS } from "@/lib/shop-lists";
 import type { AppState, PriorityKind } from "@/lib/types";
 import { classifyWasteBin, wasteBinLabel } from "@/lib/waste-bins";
 
@@ -81,6 +82,17 @@ export function buildTodayAgenda(
       });
       continue;
     }
+    if (ev.source === "personal") {
+      const who = state.members.find((m) => m.id === ev.memberId)?.name;
+      items.push({
+        id: ev.id,
+        kind: "termin",
+        title: ev.time && ev.time !== "00:00" ? `${ev.time} ${ev.title}` : ev.title,
+        detail: who ? `Kalender · ${who}` : "Eigener Kalender",
+        href: "/plan",
+      });
+      continue;
+    }
     const who = state.members.find((m) => m.id === ev.memberId)?.name;
     items.push({
       id: ev.id,
@@ -106,6 +118,9 @@ export function buildTodayAgenda(
 
   const openShop = state.shoppingList.filter((i) => !i.checked);
   if (openShop.length > 0) {
+    const lists = SHOP_LISTS.filter(
+      (l) => itemsOnList(openShop, l.id).length > 0,
+    ).map((l) => l.label);
     const names = openShop
       .slice(0, 3)
       .map((i) => i.name)
@@ -117,7 +132,10 @@ export function buildTodayAgenda(
         openShop.length === 1
           ? "1 Ding auf der Liste"
           : `${openShop.length} Dinge auf der Liste`,
-      detail: names + (openShop.length > 3 ? " …" : ""),
+      detail:
+        (lists.length > 1 ? `${lists.join(" · ")} — ` : "") +
+        names +
+        (openShop.length > 3 ? " …" : ""),
       href: "/einkauf",
     });
   }

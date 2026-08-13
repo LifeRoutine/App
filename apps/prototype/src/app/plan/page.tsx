@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { WasteBinDot, WasteBinIcon } from "@/components/waste-bin-icon";
 import { useApp } from "@/lib/app-context";
-import { icsToPlanEvents, icsToSchoolCalEvents, readIcsFile } from "@/lib/ics";
+import { icsToPersonalEvents, icsToPlanEvents, icsToSchoolCalEvents, parseIcsCalendar, readIcsFile, type ParsedIcsEvent } from "@/lib/ics";
 import { docTypeLabel } from "@/lib/mock-data";
 import {
   addDaysISO,
@@ -23,6 +23,7 @@ import {
   formatSchoolHolidayTitle,
   type SchoolHolidayPeriod,
 } from "@/lib/school-holidays";
+import { barsForDay, eventBarColor } from "@/lib/plan-bars";
 import type { DocumentType, EventRepeat, PlanEvent } from "@/lib/types";
 import { classifyWasteBin } from "@/lib/waste-bins";
 
@@ -39,6 +40,7 @@ const visibilityOptions: NonNullable<PlanEvent["visibility"]>[] = [
 ];
 
 type PlanTab = "termine" | "fristen";
+type CalLoad = "muell" | "ferien" | "schule" | "mein";
 
 /** Expandierte Mehrtages-IDs: `id:YYYY-MM-DD` → Basis-ID zum Löschen. */
 function baseEventId(id: string): string {
@@ -46,16 +48,6 @@ function baseEventId(id: string): string {
   return m?.[1] ?? id;
 }
 
-function eventBarColor(
-  ev: PlanEvent,
-  members: { id: string; color: string }[],
-): string | null {
-  if (ev.source === "school") return SCHOOL_HOLIDAY_COLOR;
-  if (ev.memberId) {
-    return members.find((m) => m.id === ev.memberId)?.color ?? null;
-  }
-  return null;
-}
 function monthMatrix(year: number, monthIndex: number): (string | null)[][] {
   const first = new Date(year, monthIndex, 1);
   const startPad = (first.getDay() + 6) % 7;
@@ -85,6 +77,7 @@ export default function PlanPage() {
     importIcsEvents,
     importSchoolHolidays,
     importSchoolCalendar,
+    importPersonalCalendar,
   } = useApp();
   const today = localDateISO();
   const [tab, setTab] = useState<PlanTab>("termine");
@@ -103,6 +96,14 @@ export default function PlanPage() {
       "",
   );
   const [schoolMsg, setSchoolMsg] = useState<string | null>(null);
+  const [calLoad, setCalLoad] = useState<CalLoad>("muell");
+  const personalIcsRef = useRef<HTMLInputElement>(null);
+  const [personalMemberId, setPersonalMemberId] = useState(
+    () => state.members[0]?.id ?? "",
+  );
+  const [personalMsg, setPersonalMsg] = useState<string | null>(null);
+  const [personalUrl, setPersonalUrl] = useState("");
+  const [personalBusy, setPersonalBusy] = useState(false);
   const [cursor, setCursor] = useState(() => {
     const [y, m] = today.split("-").map(Number);
     return { year: y, month: m - 1 };
@@ -246,6 +247,73 @@ export default function PlanPage() {
     if (schoolIcsRef.current) schoolIcsRef.current.value = "";
     const next = result.events.find((e) => e.date >= today) ?? result.events[0];
     if (next) setSelected(next.date);
+  }
+
+  async function applyPersonalIcs(events: ParsedIcsEvent[], calName?: string) {
+    const member = state.members.find((m) => m.id === personalMemberId);
+    const count = importPersonalCalendar(
+      icsToPersonalEvents(
+        events,
+        member?.id,
+        member?.name,
+        today,
+      ),
+      member?.id,
+    );
+    const name = calName ? ` „${calName}“` : "";
+    const who = member ? ` für ${member.name}` : "";
+    setPersonalMsg(`${count} Termine geladen${who}${name}.`);
+    const next = events.find((e) => e.date >= today) ?? events[0];
+    if (next) setSelected(next.date);
+  }
+
+  async function onPersonalIcsFile(file: File | undefined) {
+    setPersonalMsg(null);
+    if (!file) return;
+    const result = await readIcsFile(file);
+    if (!result.ok) {
+      setPersonalMsg(result.error);
+      if (personalIcsRef.current) personalIcsRef.current.value = "";
+      return;
+    }
+    await applyPersonalIcs(result.events, result.calName);
+    if (personalIcsRef.current) personalIcsRef.current.value = "";
+  }
+
+  async function onPersonalIcsUrl() {
+    const url = personalUrl.trim();
+    if (!url) {
+      setPersonalMsg("Link einfügen oder Datei wählen.");
+      return;
+    }
+    setPersonalBusy(true);
+    setPersonalMsg(null);
+    try {
+      const res = await fetch("/api/ics-fetch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const data = (await res.json()) as { text?: string; error?: string };
+      if (!res.ok || !data.text) {
+        setPersonalMsg(data.error || "Kalender-Link nicht lesbar.");
+        return;
+      }
+      const parsed = parseIcsCalendar(data.text);
+      if (parsed.error) {
+        setPersonalMsg(parsed.error);
+        return;
+      }
+      if (parsed.events.length === 0) {
+        setPersonalMsg("Keine Termine in diesem Kalender gefunden.");
+        return;
+      }
+      await applyPersonalIcs(parsed.events, parsed.calName);
+    } catch {
+      setPersonalMsg("Kalender-Link nicht erreichbar.");
+    } finally {
+      setPersonalBusy(false);
+    }
   }
 
   async function loadSchoolHolidays() {
@@ -489,23 +557,25 @@ export default function PlanPage() {
                   <div key={d}>{d}</div>
                 ))}
               </div>
-              <div className="mt-1 grid grid-cols-7 gap-0.5">
+              <div className="mt-1 grid grid-cols-7 gap-x-0 gap-y-1">
                 {matrix.flat().map((iso, idx) => {
                   if (!iso)
-                    return <div key={`e-${idx}`} className="aspect-square" />;
+                    return <div key={`e-${idx}`} className="min-h-[3.35rem]" />;
                   const dayList = eventsByDate.get(iso) ?? [];
-                  const has = dayList.length > 0;
                   const on = iso === selected;
-                  const accent =
-                    dayList
-                      .map((ev) => eventBarColor(ev, state.members))
-                      .find(Boolean) ?? null;
+                  const bars = barsForDay(
+                    dayList,
+                    iso,
+                    state.events,
+                    state.members,
+                    today,
+                  );
                   return (
                     <button
                       key={iso}
                       type="button"
                       onClick={() => selectDay(iso)}
-                      className={`aspect-square rounded-lg text-xs font-semibold ${
+                      className={`flex min-h-[3.35rem] flex-col overflow-hidden rounded-sm px-0 pt-0.5 text-[0.7rem] font-semibold ${
                         on
                           ? "bg-green text-white"
                           : iso === today
@@ -513,17 +583,28 @@ export default function PlanPage() {
                             : "text-ink"
                       }`}
                     >
-                      {Number(iso.slice(8))}
-                      {has ? (
-                        <span
-                          className="mx-auto mt-0.5 block h-1 w-1 rounded-full"
-                          style={{
-                            backgroundColor: on
-                              ? "#fff"
-                              : accent || "#5a9a7a",
-                          }}
-                        />
-                      ) : null}
+                      <span className="leading-none">
+                        {Number(iso.slice(8))}
+                      </span>
+                      <span className="mt-auto block w-full space-y-px pb-0.5">
+                        {bars.map((bar) => (
+                          <span
+                            key={bar.key}
+                            className={`block h-[3px] ${
+                              bar.edge === "single"
+                                ? "mx-1 rounded-full"
+                                : bar.edge === "start"
+                                  ? "ml-1 rounded-l-full"
+                                  : bar.edge === "end"
+                                    ? "mr-1 rounded-r-full"
+                                    : ""
+                            }`}
+                            style={{
+                              backgroundColor: on ? "#fff" : bar.color,
+                            }}
+                          />
+                        ))}
+                      </span>
                     </button>
                   );
                 })}
@@ -762,120 +843,215 @@ export default function PlanPage() {
             ) : null}
 
             {composer === "kalender" ? (
-              <div className="mt-3 space-y-4 rounded-2xl border border-line bg-white/90 px-4 py-4">
-                <div>
-                  <p className="text-xs font-semibold text-ink">Müllkalender</p>
-                  <p className="mt-0.5 text-[0.7rem] text-muted">
-                    .ics vom Landkreis laden. Hechingen ist schon im Plan.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => icsInputRef.current?.click()}
-                    className="mt-2 rounded-xl bg-navy px-3 py-2 text-xs font-semibold text-white"
-                  >
-                    Datei wählen (.ics)
-                  </button>
-                  <input
-                    ref={icsInputRef}
-                    type="file"
-                    accept=".ics,text/calendar"
-                    className="hidden"
-                    onChange={(e) => void onIcsFile(e.target.files?.[0])}
-                  />
-                  {icsMsg ? (
-                    <p className="mt-2 text-xs font-semibold text-save">
-                      {icsMsg}
-                    </p>
-                  ) : null}
+              <div className="mt-3 space-y-3 rounded-2xl border border-line bg-white/90 px-4 py-4">
+                <div className="grid grid-cols-4 gap-1">
+                  {(
+                    [
+                      ["muell", "Müll"],
+                      ["ferien", "Ferien"],
+                      ["schule", "Schule"],
+                      ["mein", "Mein Kalender"],
+                    ] as const
+                  ).map(([id, label]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setCalLoad(id)}
+                      className={`rounded-xl px-1 py-2 text-center text-[0.65rem] font-semibold leading-tight ${
+                        calLoad === id
+                          ? "bg-navy text-white"
+                          : "border border-line bg-white text-ink"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
-                <div className="border-t border-line pt-3">
-                  <p className="text-xs font-semibold text-ink">Schulferien</p>
-                  <p className="mt-0.5 text-[0.7rem] text-muted">
-                    Bundesland — Quelle ferien-api.de (dieses und nächstes Jahr).
-                  </p>
-                  <select
-                    value={ferienState}
-                    onChange={(e) => setFerienState(e.target.value)}
-                    className="mt-2 w-full rounded-2xl border border-line bg-white px-3 py-2.5 text-sm"
-                  >
-                    {BUNDESLAENDER.map((b) => (
-                      <option key={b.code} value={b.code}>
-                        {b.name}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    disabled={ferienBusy}
-                    onClick={() => void loadSchoolHolidays()}
-                    className="mt-2 w-full rounded-2xl bg-navy px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-                  >
-                    {ferienBusy ? "Lädt…" : "Ferien laden"}
-                  </button>
-                  {ferienMsg ? (
-                    <p className="mt-2 text-xs font-semibold text-save">
-                      {ferienMsg}
+
+                {calLoad === "muell" ? (
+                  <div>
+                    <p className="text-xs font-semibold text-ink">Müllkalender</p>
+                    <p className="mt-0.5 text-[0.7rem] text-muted">
+                      .ics vom Landkreis. Hechingen ist schon im Plan.
                     </p>
-                  ) : state.profile.schoolHolidayState ? (
-                    <p className="mt-2 text-xs text-muted">
-                      Geladen: {bundeslandName(state.profile.schoolHolidayState)}{" "}
-                      <span
-                        className="ml-1 inline-block h-2 w-2 rounded-full align-middle"
-                        style={{ backgroundColor: SCHOOL_HOLIDAY_COLOR }}
-                      />
+                    <button
+                      type="button"
+                      onClick={() => icsInputRef.current?.click()}
+                      className="mt-2 w-full rounded-xl bg-navy px-3 py-2.5 text-sm font-semibold text-white"
+                    >
+                      Datei wählen (.ics)
+                    </button>
+                    <input
+                      ref={icsInputRef}
+                      type="file"
+                      accept=".ics,text/calendar"
+                      className="hidden"
+                      onChange={(e) => void onIcsFile(e.target.files?.[0])}
+                    />
+                    {icsMsg ? (
+                      <p className="mt-2 text-xs font-semibold text-save">
+                        {icsMsg}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {calLoad === "ferien" ? (
+                  <div>
+                    <p className="text-xs font-semibold text-ink">Schulferien</p>
+                    <p className="mt-0.5 text-[0.7rem] text-muted">
+                      Bundesland — Quelle ferien-api.de.
                     </p>
-                  ) : null}
-                </div>
-                <div className="border-t border-line pt-3">
-                  <p className="text-xs font-semibold text-ink">
-                    Schulkalender der Kinder
-                  </p>
-                  <p className="mt-0.5 text-[0.7rem] text-muted">
-                    .ics von der Schule / Klasse — Farbe des Kindes im Plan.
-                    Kind zuerst unter Haushalt anlegen.
-                  </p>
-                  {state.members.length === 0 ? (
-                    <p className="mt-2 text-xs text-muted">
-                      Noch niemand im Haushalt.
+                    <select
+                      value={ferienState}
+                      onChange={(e) => setFerienState(e.target.value)}
+                      className="mt-2 w-full rounded-2xl border border-line bg-white px-3 py-2.5 text-sm"
+                    >
+                      {BUNDESLAENDER.map((b) => (
+                        <option key={b.code} value={b.code}>
+                          {b.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      disabled={ferienBusy}
+                      onClick={() => void loadSchoolHolidays()}
+                      className="mt-2 w-full rounded-2xl bg-navy px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+                    >
+                      {ferienBusy ? "Lädt…" : "Ferien laden"}
+                    </button>
+                    {ferienMsg ? (
+                      <p className="mt-2 text-xs font-semibold text-save">
+                        {ferienMsg}
+                      </p>
+                    ) : state.profile.schoolHolidayState ? (
+                      <p className="mt-2 text-xs text-muted">
+                        Geladen: {bundeslandName(state.profile.schoolHolidayState)}{" "}
+                        <span
+                          className="ml-1 inline-block h-2 w-2 rounded-full align-middle"
+                          style={{ backgroundColor: SCHOOL_HOLIDAY_COLOR }}
+                        />
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {calLoad === "schule" ? (
+                  <div>
+                    <p className="text-xs font-semibold text-ink">
+                      Schulkalender der Kinder
                     </p>
-                  ) : (
-                    <>
+                    <p className="mt-0.5 text-[0.7rem] text-muted">
+                      .ics von der Schule — Farbe des Kindes. Kind zuerst unter
+                      Haushalt anlegen.
+                    </p>
+                    {state.members.length === 0 ? (
+                      <p className="mt-2 text-xs text-muted">
+                        Noch niemand im Haushalt.
+                      </p>
+                    ) : (
+                      <>
+                        <select
+                          value={schoolMemberId}
+                          onChange={(e) => setSchoolMemberId(e.target.value)}
+                          className="mt-2 w-full rounded-2xl border border-line bg-white px-3 py-2.5 text-sm"
+                        >
+                          {state.members.map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.name}
+                              {m.role === "child" ? " (Kind)" : ""}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => schoolIcsRef.current?.click()}
+                          className="mt-2 w-full rounded-2xl bg-navy px-4 py-2.5 text-sm font-semibold text-white"
+                        >
+                          Datei wählen (.ics)
+                        </button>
+                        <input
+                          ref={schoolIcsRef}
+                          type="file"
+                          accept=".ics,text/calendar"
+                          className="hidden"
+                          onChange={(e) =>
+                            void onSchoolIcsFile(e.target.files?.[0])
+                          }
+                        />
+                      </>
+                    )}
+                    {schoolMsg ? (
+                      <p className="mt-2 text-xs font-semibold text-save">
+                        {schoolMsg}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {calLoad === "mein" ? (
+                  <div>
+                    <p className="text-xs font-semibold text-ink">
+                      Eigener Kalender
+                    </p>
+                    <p className="mt-0.5 text-[0.7rem] text-muted">
+                      Google oder Apple als .ics — ersetzt nur diesen Kalender,
+                      nicht Müll oder Schule.
+                    </p>
+                    {state.members.length > 0 ? (
                       <select
-                        value={schoolMemberId}
-                        onChange={(e) => setSchoolMemberId(e.target.value)}
+                        value={personalMemberId}
+                        onChange={(e) => setPersonalMemberId(e.target.value)}
                         className="mt-2 w-full rounded-2xl border border-line bg-white px-3 py-2.5 text-sm"
                       >
                         {state.members.map((m) => (
                           <option key={m.id} value={m.id}>
                             {m.name}
-                            {m.role === "child" ? " (Kind)" : ""}
                           </option>
                         ))}
                       </select>
-                      <button
-                        type="button"
-                        onClick={() => schoolIcsRef.current?.click()}
-                        className="mt-2 w-full rounded-2xl bg-navy px-4 py-2.5 text-sm font-semibold text-white"
-                      >
-                        Schulkalender laden (.ics)
-                      </button>
-                      <input
-                        ref={schoolIcsRef}
-                        type="file"
-                        accept=".ics,text/calendar"
-                        className="hidden"
-                        onChange={(e) =>
-                          void onSchoolIcsFile(e.target.files?.[0])
-                        }
-                      />
-                    </>
-                  )}
-                  {schoolMsg ? (
-                    <p className="mt-2 text-xs font-semibold text-save">
-                      {schoolMsg}
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => personalIcsRef.current?.click()}
+                      className="mt-2 w-full rounded-2xl bg-navy px-4 py-2.5 text-sm font-semibold text-white"
+                    >
+                      Datei wählen (.ics)
+                    </button>
+                    <input
+                      ref={personalIcsRef}
+                      type="file"
+                      accept=".ics,text/calendar"
+                      className="hidden"
+                      onChange={(e) =>
+                        void onPersonalIcsFile(e.target.files?.[0])
+                      }
+                    />
+                    <p className="mt-3 text-[0.7rem] font-semibold text-muted">
+                      Oder Link
                     </p>
-                  ) : null}
-                </div>
+                    <input
+                      value={personalUrl}
+                      onChange={(e) => setPersonalUrl(e.target.value)}
+                      placeholder="https://…ics"
+                      className="mt-1 w-full rounded-2xl border border-line bg-white px-3 py-2.5 text-sm"
+                    />
+                    <button
+                      type="button"
+                      disabled={personalBusy}
+                      onClick={() => void onPersonalIcsUrl()}
+                      className="mt-2 w-full rounded-2xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink disabled:opacity-50"
+                    >
+                      {personalBusy ? "Lädt…" : "Link laden"}
+                    </button>
+                    {personalMsg ? (
+                      <p className="mt-2 text-xs font-semibold text-save">
+                        {personalMsg}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
@@ -927,6 +1103,8 @@ export default function PlanPage() {
                           {bin ||
                           ev.source === "school" ||
                           ev.source === "vacation" ||
+                          (ev.source === "personal" &&
+                            (!ev.time || ev.time === "00:00")) ||
                           (ev.source === "schoolcal" &&
                             (!ev.time || ev.time === "00:00")) ? null : (
                             <span className="text-muted">{ev.time} · </span>
@@ -943,6 +1121,8 @@ export default function PlanPage() {
                               ? "Schulferien"
                               : ev.source === "schoolcal"
                                 ? `Schule${memberName ? ` · ${memberName}` : ""}`
+                              : ev.source === "personal"
+                                ? `Kalender${memberName ? ` · ${memberName}` : ""}`
                               : ev.source === "vacation"
                                 ? `Urlaub${memberName ? ` · ${memberName}` : ""}`
                                 : memberName

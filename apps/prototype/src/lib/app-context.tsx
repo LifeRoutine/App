@@ -59,6 +59,7 @@ import {
 } from "@/lib/plan-dates";
 import { hydrateAppState } from "@/lib/backup";
 import { makeInviteCode, warnLabelForMonths } from "@/lib/mock-data";
+import { shopListId, type ShopListId } from "@/lib/shop-lists";
 
 const STORAGE_KEY = "liferoutine.app.v1";
 const GUEST_KEY = "liferoutine.guest.v1";
@@ -150,7 +151,12 @@ type AppContextValue = {
   clearShopOffer: (id: string) => void;
   addShopItems: (
     names: string[],
-    meta?: { barcode?: string; source?: ShopItem["source"]; qty?: string },
+    meta?: {
+      barcode?: string;
+      source?: ShopItem["source"];
+      qty?: string;
+      listId?: ShopListId;
+    },
   ) => void;
   addPantryItem: (input: {
     name: string;
@@ -170,7 +176,7 @@ type AppContextValue = {
     source?: UserCatalogEntry["source"];
   }) => void;
   lookupUserCatalog: (barcode: string) => UserCatalogEntry | null;
-  clearCheckedToPantry: () => number;
+  clearCheckedToPantry: (listId?: ShopListId) => number;
   removeCatalogEntry: (barcode: string) => void;
   addRoutine: (title: string, memberId?: string) => void;
   addMissingFromMeal: (mealId: string) => number;
@@ -227,6 +233,11 @@ type AppContextValue = {
   importSchoolHolidays: (events: PlanEvent[], stateCode: string) => number;
   /** Schulkalender eines Kindes (.ics) — ersetzt den vorherigen für diese Person */
   importSchoolCalendar: (events: PlanEvent[], memberId: string) => number;
+  /** Eigener Kalender (.ics) — ersetzt nur diesen Kalender, nicht Müll/Schule */
+  importPersonalCalendar: (
+    events: PlanEvent[],
+    memberId?: string,
+  ) => number;
   resetDemo: () => Promise<void>;
   importBackup: (next: AppState) => void;
 };
@@ -260,9 +271,19 @@ function saveState(state: AppState) {
 function mergeShopNames(
   prev: ShopItem[],
   names: string[],
-  meta?: { barcode?: string; source?: ShopItem["source"]; qty?: string },
+  meta?: {
+    barcode?: string;
+    source?: ShopItem["source"];
+    qty?: string;
+    listId?: ShopListId;
+  },
 ): ShopItem[] {
-  const existing = new Set(prev.map((i) => i.name.toLowerCase()));
+  const listId = meta?.listId ?? "einkauf";
+  const existing = new Set(
+    prev
+      .filter((i) => shopListId(i) === listId)
+      .map((i) => i.name.toLowerCase()),
+  );
   const additions: ShopItem[] = names
     .filter((n) => !existing.has(n.toLowerCase()))
     .map((name, index) => ({
@@ -273,8 +294,10 @@ function mergeShopNames(
       barcode: meta?.barcode,
       source: meta?.source ?? "manual",
       visibility: "shared" as const,
+      listId,
     }));
   const revived = prev.map((item) =>
+    shopListId(item) === listId &&
     names.some((n) => n.toLowerCase() === item.name.toLowerCase())
       ? {
           ...item,
@@ -282,6 +305,7 @@ function mergeShopNames(
           qty: meta?.qty ?? item.qty,
           barcode: meta?.barcode ?? item.barcode,
           source: meta?.source ?? item.source,
+          listId,
         }
       : item,
   );
@@ -452,7 +476,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const visibleOffersSavings = useMemo(() => {
     return state.shoppingList
-      .filter((i) => !i.checked)
+      .filter((i) => !i.checked && shopListId(i) === "einkauf")
       .map((i) =>
         resolveOffer(i.offer, {
           productName: i.name,
@@ -471,7 +495,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const todayPriorities = useMemo((): Priority[] => {
     const openOffers = state.shoppingList
-      .filter((i) => !i.checked)
+      .filter((i) => !i.checked && shopListId(i) === "einkauf")
       .map((i) => ({
         item: i,
         offer: resolveOffer(i.offer, {
@@ -631,7 +655,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const addShopItems = useCallback(
     (
       names: string[],
-      meta?: { barcode?: string; source?: ShopItem["source"]; qty?: string },
+      meta?: {
+        barcode?: string;
+        source?: ShopItem["source"];
+        qty?: string;
+        listId?: ShopListId;
+      },
     ) => {
       update((prev) => ({
         ...prev,
@@ -799,63 +828,70 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [state.userCatalog],
   );
 
-  const clearCheckedToPantry = useCallback(() => {
+  const clearCheckedToPantry = useCallback((listId?: ShopListId) => {
     let count = 0;
     update((prev) => {
-      const checked = prev.shoppingList.filter((i) => i.checked);
+      const checked = prev.shoppingList.filter(
+        (i) => i.checked && (listId ? shopListId(i) === listId : true),
+      );
       count = checked.length;
       if (count === 0) return prev;
 
+      const toPantry = !listId || listId === "einkauf";
       let pantry = [...prev.pantry];
-      for (const item of checked) {
-        const fromQty = parseQtyHint(item.qty);
-        const addAmount = fromQty?.amount ?? 1;
-        const unitHint = fromQty?.unit;
-        const existing = pantry.find(
-          (p) => p.name.toLowerCase() === item.name.toLowerCase(),
-        );
-        if (existing) {
-          const amount = existing.amount + addAmount;
-          pantry = pantry.map((p) =>
-            p.id === existing.id
-              ? {
-                  ...p,
-                  amount,
-                  unit: unitHint ?? p.unit,
-                  status: statusFromAmount(amount, p.minAmount),
-                  estimate: estimateFromAmount(
-                    amount,
-                    unitHint ?? p.unit,
-                    p.minAmount,
-                  ),
-                  barcode: item.barcode ?? p.barcode,
-                }
-              : p,
+      if (toPantry) {
+        for (const item of checked) {
+          const fromQty = parseQtyHint(item.qty);
+          const addAmount = fromQty?.amount ?? 1;
+          const unitHint = fromQty?.unit;
+          const existing = pantry.find(
+            (p) => p.name.toLowerCase() === item.name.toLowerCase(),
           );
-        } else {
-          const amount = addAmount;
-          const unit = unitHint ?? guessDefaultUnit(item.name);
-          const minAmount = guessDefaultMin(item.name, unit);
-          pantry = [
-            {
-              id: `pantry-${Date.now()}-${item.id}`,
-              name: item.name,
-              amount,
-              minAmount,
-              unit,
-              estimate: estimateFromAmount(amount, unit, minAmount),
-              status: statusFromAmount(amount, minAmount),
-              barcode: item.barcode,
-            },
-            ...pantry,
-          ];
+          if (existing) {
+            const amount = existing.amount + addAmount;
+            pantry = pantry.map((p) =>
+              p.id === existing.id
+                ? {
+                    ...p,
+                    amount,
+                    unit: unitHint ?? p.unit,
+                    status: statusFromAmount(amount, p.minAmount),
+                    estimate: estimateFromAmount(
+                      amount,
+                      unitHint ?? p.unit,
+                      p.minAmount,
+                    ),
+                    barcode: item.barcode ?? p.barcode,
+                  }
+                : p,
+            );
+          } else {
+            const amount = addAmount;
+            const unit = unitHint ?? guessDefaultUnit(item.name);
+            const minAmount = guessDefaultMin(item.name, unit);
+            pantry = [
+              {
+                id: `pantry-${Date.now()}-${item.id}`,
+                name: item.name,
+                amount,
+                minAmount,
+                unit,
+                estimate: estimateFromAmount(amount, unit, minAmount),
+                status: statusFromAmount(amount, minAmount),
+                barcode: item.barcode,
+              },
+              ...pantry,
+            ];
+          }
         }
       }
 
       return {
         ...prev,
         pantry,
-        shoppingList: prev.shoppingList.filter((i) => !i.checked),
+        shoppingList: prev.shoppingList.filter(
+          (i) => !(i.checked && (listId ? shopListId(i) === listId : true)),
+        ),
       };
     });
     return count;
@@ -909,12 +945,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const before = prev.shoppingList.length;
         const shoppingList = mergeShopNames(prev.shoppingList, meal.missing, {
           source: "meal",
+          listId: "einkauf",
         });
-        added = shoppingList.length - before + meal.missing.filter((n) =>
-          prev.shoppingList.some(
-            (i) => i.name.toLowerCase() === n.toLowerCase() && i.checked,
-          ),
-        ).length;
+        added =
+          shoppingList.length -
+          before +
+          meal.missing.filter((n) =>
+            prev.shoppingList.some(
+              (i) =>
+                shopListId(i) === "einkauf" &&
+                i.name.toLowerCase() === n.toLowerCase() &&
+                i.checked,
+            ),
+          ).length;
         return { ...prev, shoppingList };
       });
       return added;
@@ -1372,6 +1415,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [update],
   );
 
+  const importPersonalCalendar = useCallback(
+    (incoming: PlanEvent[], memberId?: string) => {
+      const today = localDateISO();
+      const normalized = incoming.map((e) => normalizePlanEvent(e, today));
+      update((prev) => ({
+        ...prev,
+        events: [
+          ...prev.events.filter((e) =>
+            memberId
+              ? !(e.source === "personal" && e.memberId === memberId)
+              : !(e.source === "personal" && !e.memberId),
+          ),
+          ...normalized,
+        ],
+      }));
+      return normalized.length;
+    },
+    [update],
+  );
+
   const resetDemo = useCallback(async () => {
     try {
       const res = await fetch("/api/demo/reset", {
@@ -1483,6 +1546,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     importIcsEvents,
     importSchoolHolidays,
     importSchoolCalendar,
+    importPersonalCalendar,
     resetDemo,
     importBackup,
   };

@@ -30,7 +30,11 @@ export function hydrateAppState(raw: unknown): AppState {
       inviteCode: parsed.profile.inviteCode || fallback.profile.inviteCode,
     },
     members: parsed.members ?? fallback.members,
-    shoppingList: parsed.shoppingList ?? fallback.shoppingList,
+    shoppingList: (parsed.shoppingList ?? fallback.shoppingList).map((i) => ({
+      ...i,
+      listId:
+        i.listId === "baumarkt" || i.listId === "reise" ? i.listId : "einkauf",
+    })),
     routines: parsed.routines ?? fallback.routines,
     events: (parsed.events ?? fallback.events).map((e) =>
       normalizePlanEvent(e, localDateISO()),

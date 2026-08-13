@@ -21,7 +21,7 @@ Stand: 2026-08-09 · inkl. Abgleich Gemini-Empfehlungen
 - [x] Schulkalender der Kinder (.ics, Farbe der Person)
 - [x] Urlaub pro Person farblich im Plan
 - [x] Heute: echte Tagespunkte (Müll, Frist, Urlaub, Liste, Essen) statt €/Min
-- [x] Erinnerungen (beim Öffnen der App; ehrlich: kein Hintergrund-Wecker)
+- [x] Erinnerungen (beim Öffnen; Plan im SW vorhalten — iPhone weiter nur offen)
 - [x] Plan: drei Aktionen Termin · Urlaub · Kalender laden
 
 ## P3 — Validierung
@@ -51,10 +51,11 @@ Stand: 2026-08-09 · inkl. Abgleich Gemini-Empfehlungen
 ## Inspiration Dæly (nur Software-Ideen, kein Wandgerät) — 2026-08-10
 Abgeguckt von daely-shop.com; LifeRoutine bleibt App/PWA-Routine, kein Hardware-Konkurrent.
 - [x] **Person-Farbe überall:** Termine + Zuhause-Routinen („Wer?“ / „Wer macht’s?“) — Urlaub schon zuvor
-- [ ] **Kalender-Import (opt-in):** eigene .ics / Google-/Apple-Link vom Nutzer — wie Müllkalender, nichts scrapen
+- [x] **Kalender-Import (opt-in):** eigene .ics / Google-/Apple-Link vom Nutzer — wie Müllkalender, nichts scrapen
 - [x] **Erinnerungen:** Push/PWA-Notification vor Termin/Routine/Frist (einfach, alltagssprachlich)
-- [ ] **Mehrere Listen:** nicht nur eine Einkaufsliste (z. B. Baumarkt, Reise) — klar getrennt
+- [x] **Mehrere Listen:** Einkauf / Baumarkt / Reise — klar getrennt
 - [x] **Essensplan sichtbarer:** Woche auf einen Blick + „Was gibt’s heute?“ auf Heute
+- [x] **Monatsansicht:** farbige Balken über Mehrtages-Termine (Urlaub/Ferien/…)
 - [ ] Später optional: kinderleichtes Abhaken / Punkte — nur wenn Tester Familien mit Kindern priorisieren
 - **Nicht übernehmen:** Wand-Display, Bilderrahmen-Modus, Geräte-Montage, Hardware-Preis
 

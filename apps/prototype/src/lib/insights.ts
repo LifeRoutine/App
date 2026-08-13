@@ -51,6 +51,7 @@ export function buildShoppingTrip(state: AppState): TripStop[] {
   const open = state.shoppingList.filter(
     (i) =>
       !i.checked &&
+      (i.listId === "einkauf" || !i.listId) &&
       i.offer &&
       state.profile.preferredStoreIds.includes(i.offer.storeId),
   );

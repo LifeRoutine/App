@@ -25,6 +25,8 @@ export type ShopOffer = {
   source?: "demo" | "user" | "partner";
 };
 
+export type ShopListId = "einkauf" | "baumarkt" | "reise";
+
 export type ShopItem = {
   id: string;
   name: string;
@@ -36,6 +38,8 @@ export type ShopItem = {
   /** Geteilt mit Haushalt oder nur für dich */
   visibility?: "shared" | "private";
   assigneeId?: string;
+  /** Welche Liste — fehlt = Einkauf (ältere Stände) */
+  listId?: ShopListId;
 };
 
 export type NearbyStore = {
@@ -105,8 +109,8 @@ export type PlanEvent = {
   repeatUntil?: string;
   /** Einzelne Tage aus der Serie auslassen */
   skipDates?: string[];
-  /** Herkunft: manuell, Müll-.ics, Schulferien-API, Schulkalender Kind, eigener Urlaub */
-  source?: "manual" | "ics" | "school" | "schoolcal" | "vacation";
+  /** Herkunft: manuell, Müll-.ics, Schulferien-API, Schulkalender Kind, eigener Kalender, Urlaub */
+  source?: "manual" | "ics" | "school" | "schoolcal" | "personal" | "vacation";
   /** UID aus ICS / Ferien-Slug — für erneuten Import ohne Duplikate */
   icsUid?: string;
   /** Abfall-Tonne (aus Kalender-Titel) */

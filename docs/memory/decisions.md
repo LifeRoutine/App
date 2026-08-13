@@ -40,12 +40,21 @@ Stand: 2026-08-09
 - **P4:** Backend/Auth/Sync + Stripe + Partner-Feed erst nach Feedback.
 - Angebote: kein Scraping; Crowdsource/OCR-Prospektfoto = optionale Stufe nach P1.
 
+## Positionierung vs. Dæly (2026-08-10)
+- Dæly = Wand-Familienkalender (Hardware). LifeRoutine = Routine-App/PWA (Software).
+- Stefan: Vision weiter mit **vielen nützlichen Routine-Apps** (Schwester zu AquaRoutine), nicht Hardware-Konkurrenz.
+- Von Dæly nur Software-Ideen abgucken (Person-Farben, ICS-Sync opt-in, Erinnerungen, Mehrfach-Listen, Essensplan auf Heute) — siehe backlog.
+
 ## Routinen / Müllkalender
 - Stefan: Abfuhrtermine kommen aus dem **Müllkalender des Landkreis/der Kommune** — **jedes Gebiet anders**.
 - **Kein Scraping** — Nutzer lädt selbst (.ics / Link / manuell).
 - **ICS-Import (2026-08-10):** Plan → „Müllkalender laden“; ersetzt vorherige ICS-Termine; Tonnen-Symbole (Rest/Bio/Gelb/Papier/Elektro/…).
 - Beispiel-Datei Stefan: Abfall+ `landstrasse19hechingen.ics` (Landstraße 19, Hechingen).
 - Prototyp: auch manuelle Routine „Müll rausstellen“.
+- **Eigener Kalender (2026-08-13):** unter Kalender laden → „Mein Kalender“; .ics-Datei oder https/webcal-Link; Quelle `personal`; ersetzt nur diesen Kalender, nicht Müll/Schule.
+- **Mehrfach-Listen:** Einkauf / Baumarkt / Reise (`listId`); Angebote/Route nur auf Einkauf; Erledigt→Vorrat nur Einkauf.
+- **Monatsbalken:** Urlaub/Ferien/Mehrtages als farbige Balken, nicht nur Punkt.
+- **Erinnerungen:** Plan im Service Worker; Periodic Sync wo möglich; iPhone ehrlich nur bei offener App.
 
 
 

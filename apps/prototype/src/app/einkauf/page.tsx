@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { OfferMarkForm } from "@/components/offer-mark-form";
@@ -7,6 +8,18 @@ import { ProductCapture } from "@/components/product-capture";
 import { useApp } from "@/lib/app-context";
 import { resolveOffer } from "@/lib/offers";
 import { offerBadgeLabel } from "@/lib/offers/types";
+import {
+  itemsOnList,
+  SHOP_LISTS,
+  shopListLabel,
+  type ShopListId,
+} from "@/lib/shop-lists";
+
+const captureTitle: Record<ShopListId, string> = {
+  einkauf: "Zur Einkaufsliste",
+  baumarkt: "Zum Baumarkt",
+  reise: "Zur Reiseliste",
+};
 
 export default function EinkaufPage() {
   const {
@@ -24,56 +37,107 @@ export default function EinkaufPage() {
     setShopOffer,
     clearShopOffer,
   } = useApp();
+  const [listId, setListId] = useState<ShopListId>("einkauf");
+  const listItems = useMemo(
+    () => itemsOnList(state.shoppingList, listId),
+    [state.shoppingList, listId],
+  );
+  const isEinkauf = listId === "einkauf";
 
   return (
     <AppShell title="Einkauf" subtitle="Liste · Märkte · Vorräte · Essen">
-      <section className="hero-einkauf animate-rise rounded-3xl px-5 py-5">
-        <p className="text-sm text-mint/95">Deine Liste</p>
-        <p className="mt-1 font-display text-2xl font-semibold">
-          Heute bis zu{" "}
-          {visibleOffersSavings.toFixed(2).replace(".", ",")} € sparen
-        </p>
-        <p className="mt-2 text-sm text-white/85">
-          Deine Märkte: {preferredStoreLabels}
-        </p>
-        <p className="mt-1 text-xs text-white/75">
-          Angebot selbst aus dem Prospekt eintragen — oder ohne Preis weiter.
-        </p>
-        <Link
-          href="/einkauf/maerkte"
-          className="mt-3 inline-flex rounded-xl bg-white/20 px-3 py-2 text-xs font-semibold text-white ring-1 ring-white/30"
-        >
-          Märkte / Prospekte ({preferredStores.length})
-        </Link>
-      </section>
+      <div className="grid grid-cols-3 gap-1.5">
+        {SHOP_LISTS.map((l) => {
+          const n = itemsOnList(state.shoppingList, l.id).filter(
+            (i) => !i.checked,
+          ).length;
+          return (
+            <button
+              key={l.id}
+              type="button"
+              onClick={() => setListId(l.id)}
+              className={`rounded-2xl px-2 py-2.5 text-center ${
+                listId === l.id
+                  ? "bg-navy text-white"
+                  : "border border-line bg-white text-ink"
+              }`}
+            >
+              <p className="text-[0.75rem] font-semibold leading-tight">
+                {l.label}
+              </p>
+              <p
+                className={`mt-0.5 text-[0.65rem] ${
+                  listId === l.id ? "text-white/80" : "text-muted"
+                }`}
+              >
+                {n === 0 ? l.hint : n === 1 ? "1 offen" : `${n} offen`}
+              </p>
+            </button>
+          );
+        })}
+      </div>
 
-      <section className="mt-4 rounded-2xl border border-line bg-white/80 px-4 py-3">
-        <p className="text-sm font-semibold text-ink">Liste erweitern so:</p>
-        <p className="mt-1 text-xs text-muted">
-          Tippen · aus Bekanntem wählen · Barcode · Vorräte · Essen · Helfer
-        </p>
-        <p className="mt-1 text-xs text-muted">
-          Beleg nach dem Einkauf: unter{" "}
-          <Link href="/einkauf/vorraete" className="font-semibold text-save">
-            Vorräte
+      {isEinkauf ? (
+        <section className="hero-einkauf mt-3 animate-rise rounded-3xl px-5 py-5">
+          <p className="text-sm text-mint/95">Deine Liste</p>
+          <p className="mt-1 font-display text-2xl font-semibold">
+            Heute bis zu{" "}
+            {visibleOffersSavings.toFixed(2).replace(".", ",")} € sparen
+          </p>
+          <p className="mt-2 text-sm text-white/85">
+            Deine Märkte: {preferredStoreLabels}
+          </p>
+          <p className="mt-1 text-xs text-white/75">
+            Angebot selbst aus dem Prospekt eintragen — oder ohne Preis weiter.
+          </p>
+          <Link
+            href="/einkauf/maerkte"
+            className="mt-3 inline-flex rounded-xl bg-white/20 px-3 py-2 text-xs font-semibold text-white ring-1 ring-white/30"
+          >
+            Märkte / Prospekte ({preferredStores.length})
           </Link>
-          .
-        </p>
-      </section>
+        </section>
+      ) : (
+        <section className="mt-3 rounded-3xl border border-line bg-white/80 px-5 py-4">
+          <p className="text-sm text-muted">{shopListLabel(listId)}</p>
+          <p className="mt-1 font-display text-xl font-semibold text-ink">
+            {listId === "baumarkt"
+              ? "Was nicht in den Supermarkt gehört."
+              : "Was mit muss — getrennt vom Alltagseinkauf."}
+          </p>
+        </section>
+      )}
+
+      {isEinkauf ? (
+        <section className="mt-4 rounded-2xl border border-line bg-white/80 px-4 py-3">
+          <p className="text-sm font-semibold text-ink">Liste erweitern so:</p>
+          <p className="mt-1 text-xs text-muted">
+            Tippen · aus Bekanntem wählen · Barcode · Vorräte · Essen · Helfer
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            Beleg nach dem Einkauf: unter{" "}
+            <Link href="/einkauf/vorraete" className="font-semibold text-save">
+              Vorräte
+            </Link>
+            .
+          </p>
+        </section>
+      ) : null}
 
       <div className="mt-3 space-y-3">
         <ProductCapture
-          title="Zur Einkaufsliste"
+          title={captureTitle[listId]}
           onProduct={(p) => {
             addShopItems([p.name], {
               barcode: p.barcode || undefined,
               qty: p.qty,
               source: p.source === "scan" ? "scan" : "manual",
+              listId,
             });
           }}
         />
       </div>
-      {shoppingTrip.length > 0 ? (
+      {isEinkauf && shoppingTrip.length > 0 ? (
         <section className="mt-4 rounded-2xl border border-line bg-white/80 px-4 py-4">
           <h2 className="font-display text-lg font-semibold text-ink">
             Reihenfolge der Märkte
@@ -104,7 +168,7 @@ export default function EinkaufPage() {
         </section>
       ) : null}
 
-      {extraweg.length > 0 ? (
+      {isEinkauf && extraweg.length > 0 ? (
         <section className="mt-4 space-y-2">
           <h2 className="font-display text-lg font-semibold text-ink">
             Lohnt sich der Umweg?
@@ -131,19 +195,22 @@ export default function EinkaufPage() {
       <section className="mt-4 space-y-3">
         <div className="flex items-center justify-between gap-2">
           <h2 className="font-display text-lg font-semibold text-ink">
-            Einkaufsliste
+            {shopListLabel(listId)}
           </h2>
-          {state.shoppingList.some((i) => i.checked) ? (
+          {listItems.some((i) => i.checked) ? (
             <button
               type="button"
-              onClick={() => clearCheckedToPantry()}
+              onClick={() => clearCheckedToPantry(listId)}
               className="text-xs font-semibold text-save"
             >
-              Erledigt → Vorrat
+              {isEinkauf ? "Erledigt → Vorrat" : "Erledigte streichen"}
             </button>
           ) : null}
         </div>
-        {[...state.shoppingList]
+        {listItems.length === 0 ? (
+          <p className="text-sm text-muted">Noch nichts auf dieser Liste.</p>
+        ) : null}
+        {[...listItems]
           .sort((a, b) => Number(a.checked) - Number(b.checked))
           .map((item) => {
           const offer = resolveOffer(item.offer, {
@@ -152,6 +219,7 @@ export default function EinkaufPage() {
             stores: allStores,
           });
           const offerVisible =
+            isEinkauf &&
             offer &&
             state.profile.preferredStoreIds.includes(offer.storeId);
           return (
@@ -211,7 +279,7 @@ export default function EinkaufPage() {
                       ? "Nur ich · tippen → für alle"
                       : "Für alle · tippen → nur ich"}
                   </button>
-                  {offerVisible && offer ? (
+                  {isEinkauf && offerVisible && offer ? (
                     <div className="mt-2 rounded-xl bg-sand/80 px-3 py-2.5">
                       <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
                         <span className="rounded-md bg-navy/10 px-2 py-0.5 text-[0.65rem] text-muted">
@@ -231,13 +299,13 @@ export default function EinkaufPage() {
                       </div>
                       <p className="mt-1 text-sm text-muted">{offer.note}</p>
                     </div>
-                  ) : offer ? (
+                  ) : isEinkauf && offer ? (
                     <p className="mt-2 text-xs text-muted">
                       {offerBadgeLabel(offer)} bei {offer.storeLabel} — Markt
                       nicht gewählt.
                     </p>
                   ) : null}
-                  {!item.checked ? (
+                  {isEinkauf && !item.checked ? (
                     <OfferMarkForm
                       preferredStores={preferredStores}
                       current={item.offer}

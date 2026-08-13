@@ -6,14 +6,14 @@ Pfad: `C:\LifeRoutine\apps\prototype`
 ## Funktionierender Lokal-Prototyp
 - Onboarding inkl. Ortssuche (OSM) + GPS
 - Heute: Tagespunkte (Müll, Frist, Urlaub, Liste) + **Was gibt’s heute?**
-- Erinnerungen: Einstellungen → an; Hinweis beim Öffnen (kein Hintergrund-Wecker)
-- Plan: **Termin · Urlaub · Kalender laden** (Müll-ICS, Schulferien, **Schulkalender Kind**)
-- Einkauf: Liste · Märkte · Vorräte · Essen · Katalog · Angebote-Stub
+- Erinnerungen: Einstellungen → an; Hinweis beim Öffnen; Plan wird im Service Worker vorgehalten (Android/PWA manchmal später; iPhone nur bei offener App)
+- Plan: **Termin · Urlaub · Kalender laden** (Müll, Ferien, Schule, **Mein Kalender**)
+- Einkauf: **drei Listen** Einkauf / Baumarkt / Reise · Märkte · Vorräte · Essen · Katalog · Angebote-Stub
 - Liste: Tippen/Barcode, **bekannte Produkte antippen** (Hintergrund-Speicher), Angebot markieren, Route, Extraweg, privat/geteilt, Erledigt → Vorrat
 - Katalog: wächst mit **Liste + Scan**; Einträge löschbar; Vorschläge beim Hinzufügen
 - Haushalt: Mitglieder, Einladungs-Code, Beitritt-Demo (`/haushalt`)
 - Zuhause: Routinen + neue hinzufügen
-- Plan: Kalender, Termine, **Müllkalender .ics**, **Schulferien (Bundesland)**, **Urlaub pro Person farblich**, Fristen, Sichtbarkeit, Wiederholung
+- Plan: Kalender mit **Monatsbalken**, Termine, **Müllkalender .ics**, **Schulferien**, **Schulkalender Kind**, **eigener Kalender** (.ics/Link), **Urlaub pro Person**, Fristen, Sichtbarkeit, Wiederholung
 - Helfer (`/life-ai`): Phrasen wie „Tomaten kaufen“ → Liste; Alltagssprache
 - Einstellungen: Name, Typ, Ort + **Sicherungskopie**, **PWA-Install**, **App-PIN**, Links Haushalt/Märkte/Angebote/Katalog/Datenschutz
 - Datenschutz-Seite: was lokal liegt, Sicherungskopie, PIN, Löschen

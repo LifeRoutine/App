@@ -4,6 +4,8 @@ import { classifyWasteBin, wasteBinLabel } from "@/lib/waste-bins";
 
 const ON_KEY = "liferoutine.remind.on.v1";
 const SHOWN_KEY = "liferoutine.remind.shown.v1";
+const TIME_KEY = "liferoutine.remind.time.v1";
+const DEFAULT_TIME = "07:00";
 
 export type ReminderLine = {
   id: string;
@@ -24,10 +26,43 @@ export function setRemindersEnabled(on: boolean) {
   if (typeof window === "undefined") return;
   try {
     if (on) window.localStorage.setItem(ON_KEY, "1");
-    else window.localStorage.removeItem(ON_KEY);
+    else {
+      window.localStorage.removeItem(ON_KEY);
+      void caches.delete("lr-remind-v1");
+    }
   } catch {
     /* ignore */
   }
+}
+
+/** Uhrzeit HH:MM — ab dann der Tages-Hinweis (Standard 07:00). */
+export function reminderTime(): string {
+  if (typeof window === "undefined") return DEFAULT_TIME;
+  try {
+    const raw = window.localStorage.getItem(TIME_KEY);
+    if (raw && /^\d{2}:\d{2}$/.test(raw)) return raw;
+  } catch {
+    /* ignore */
+  }
+  return DEFAULT_TIME;
+}
+
+export function setReminderTime(hhmm: string) {
+  if (typeof window === "undefined") return;
+  const m = hhmm.trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return;
+  const h = Math.min(23, Math.max(0, Number(m[1])));
+  const min = Math.min(59, Math.max(0, Number(m[2])));
+  const value = `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+  try {
+    window.localStorage.setItem(TIME_KEY, value);
+  } catch {
+    /* ignore */
+  }
+}
+
+function atLocal(iso: string, hhmm: string): number {
+  return new Date(`${iso}T${hhmm}:00`).getTime();
 }
 
 function alreadyShownToday(today: string): boolean {
@@ -116,6 +151,78 @@ export function collectReminderLines(
   return lines.slice(0, 4);
 }
 
+const SCHEDULE_CACHE = "lr-remind-v1";
+const SCHEDULE_URL = "/lr-remind-schedule.json";
+
+type ScheduledNote = {
+  id: string;
+  at: number;
+  title: string;
+  body: string;
+};
+
+/** Nächste Tage in den Service Worker legen — damit ein Hinweis auch ohne offene App kommen kann (Android/PWA). */
+export async function persistReminderSchedule(state: AppState): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (!remindersEnabled() || !("caches" in window)) return;
+  const today = localDateISO();
+  const time = reminderTime();
+  const now = Date.now();
+  const items: ScheduledNote[] = [];
+  for (let i = 0; i < 7; i++) {
+    const iso = addDaysISO(today, i);
+    const lines = collectReminderLines(state, iso);
+    if (lines.length === 0) continue;
+    let at = atLocal(iso, time);
+    // Heute schon nach der Uhrzeit → sofort (beim Öffnen)
+    if (i === 0 && at < now) at = now;
+    items.push({
+      id: iso,
+      at,
+      title: "LifeRoutine",
+      body: lines.map((l) => `${l.title}: ${l.body}`).join("\n"),
+    });
+  }
+  try {
+    const cache = await caches.open(SCHEDULE_CACHE);
+    await cache.put(
+      SCHEDULE_URL,
+      new Response(
+        JSON.stringify({
+          items,
+          shownId: alreadyShownToday(today) ? today : null,
+        }),
+        { headers: { "Content-Type": "application/json" } },
+      ),
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+export async function registerBackgroundReminders(): Promise<"ok" | "limited"> {
+  if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
+    return "limited";
+  }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const periodic = (
+      reg as ServiceWorkerRegistration & {
+        periodicSync?: {
+          register: (tag: string, opts: { minInterval: number }) => Promise<void>;
+        };
+      }
+    ).periodicSync;
+    if (periodic) {
+      await periodic.register("lr-remind", { minInterval: 60 * 60 * 1000 });
+      return "ok";
+    }
+  } catch {
+    /* Browser erlaubt kein periodicsync (typisch iOS) */
+  }
+  return "limited";
+}
+
 export async function maybeNotifyReminders(
   state: AppState,
 ): Promise<"shown" | "skipped" | "denied" | "unsupported"> {
@@ -124,8 +231,14 @@ export async function maybeNotifyReminders(
   if (!remindersEnabled()) return "skipped";
   if (Notification.permission !== "granted") return "denied";
 
+  await persistReminderSchedule(state);
+  void registerBackgroundReminders();
+
   const today = localDateISO();
   if (alreadyShownToday(today)) return "skipped";
+
+  // Noch vor der gewählten Uhrzeit → nur planen, nicht jetzt zeigen
+  if (Date.now() < atLocal(today, reminderTime())) return "skipped";
 
   const lines = collectReminderLines(state, today);
   if (lines.length === 0) {
@@ -146,6 +259,7 @@ export async function maybeNotifyReminders(
       new Notification("LifeRoutine", { body, icon: "/icons/icon-192.png" });
     }
     markShown(today);
+    await persistReminderSchedule(state);
     return "shown";
   } catch {
     return "skipped";

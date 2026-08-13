@@ -97,6 +97,8 @@ export function parseIcsCalendar(text: string): {
     date?: string;
     endRaw?: string;
     endDateOnly?: boolean;
+    rrule?: string;
+    exdates?: string[];
   } = {};
 
   for (const line of lines) {
@@ -111,19 +113,29 @@ export function parseIcsCalendar(text: string): {
     if (line === "END:VEVENT") {
       if (inEvent && cur.date && cur.title) {
         const title = cur.title.trim();
-        events.push({
-          uid: cur.uid?.trim() || `ics-${cur.date}-${title}`,
-          title,
-          date: cur.date,
-          endDate:
-            cur.endRaw && cur.date
-              ? inclusiveEnd(cur.date, cur.endRaw, Boolean(cur.endDateOnly))
-              : undefined,
-          time: cur.time,
-          detail: cur.detail?.trim() || "",
-          location: cur.location?.trim() || undefined,
-          wasteBin: classifyWasteBin(title),
-        });
+        const baseEnd =
+          cur.endRaw && cur.date
+            ? inclusiveEnd(cur.date, cur.endRaw, Boolean(cur.endDateOnly))
+            : undefined;
+        const uid = cur.uid?.trim() || `ics-${cur.date}-${title}`;
+        const occurrences = expandSimpleRrule(
+          cur.date,
+          baseEnd,
+          cur.rrule,
+          cur.exdates ?? [],
+        );
+        for (const occ of occurrences) {
+          events.push({
+            uid: occ.date === cur.date ? uid : `${uid}-${occ.date}`,
+            title,
+            date: occ.date,
+            endDate: occ.endDate,
+            time: cur.time,
+            detail: cur.detail?.trim() || "",
+            location: cur.location?.trim() || undefined,
+            wasteBin: classifyWasteBin(title),
+          });
+        }
       }
       inEvent = false;
       cur = {};
@@ -153,11 +165,115 @@ export function parseIcsCalendar(text: string): {
       cur.uid = value;
     } else if (name === "LOCATION") {
       cur.location = value;
+    } else if (name === "RRULE") {
+      cur.rrule = value;
+    } else if (name === "EXDATE") {
+      const d = parseIcsDate(line);
+      if (d) cur.exdates = [...(cur.exdates ?? []), d];
     }
   }
 
   events.sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title, "de"));
   return { calName, events };
+}
+
+const WEEKDAY_INDEX: Record<string, number> = {
+  SU: 0,
+  MO: 1,
+  TU: 2,
+  WE: 3,
+  TH: 4,
+  FR: 5,
+  SA: 6,
+};
+
+/** Einfache RRULE (täglich/wöchentlich/monatlich/jährlich) — max. 2 Jahre. */
+function expandSimpleRrule(
+  start: string,
+  endDate: string | undefined,
+  rrule: string | undefined,
+  exdates: string[],
+): { date: string; endDate?: string }[] {
+  const span =
+    endDate && endDate > start
+      ? Math.round(
+          (new Date(`${endDate}T12:00:00`).getTime() -
+            new Date(`${start}T12:00:00`).getTime()) /
+            86_400_000,
+        )
+      : 0;
+  const withSpan = (date: string) => ({
+    date,
+    endDate: span > 0 ? addDaysISO(date, span) : undefined,
+  });
+  if (!rrule) return [withSpan(start)];
+
+  const parts = Object.fromEntries(
+    rrule.split(";").map((p) => {
+      const [k, v] = p.split("=");
+      return [(k ?? "").toUpperCase(), (v ?? "").toUpperCase()];
+    }),
+  );
+  const freq = parts.FREQ as "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY" | undefined;
+  if (!freq) return [withSpan(start)];
+  const interval = Math.max(1, Number(parts.INTERVAL) || 1);
+  const until = parts.UNTIL ? parseIcsDate(`:${parts.UNTIL}`) : undefined;
+  const count = parts.COUNT ? Math.min(400, Number(parts.COUNT) || 0) : 0;
+  const byDay = (parts.BYDAY ?? "")
+    .split(",")
+    .map((d) => d.replace(/^-?\d+/, ""))
+    .filter((d) => d in WEEKDAY_INDEX);
+  const skip = new Set(exdates);
+  const hardEnd = until ?? addDaysISO(start, 730);
+  const out: { date: string; endDate?: string }[] = [];
+
+  const push = (date: string) => {
+    if (date > hardEnd) return false;
+    if (count && out.length >= count) return false;
+    if (!skip.has(date) && date >= start) out.push(withSpan(date));
+    return !count || out.length < count;
+  };
+
+  if (freq === "WEEKLY" && byDay.length > 0) {
+    let weekStart = start;
+    let guard = 0;
+    while (guard++ < 400) {
+      const week = new Date(`${weekStart}T12:00:00`);
+      const mondayOffset = (week.getDay() + 6) % 7;
+      const monday = addDaysISO(weekStart, -mondayOffset);
+      for (const code of byDay) {
+        const iso = addDaysISO(
+          monday,
+          WEEKDAY_INDEX[code]! === 0 ? 6 : WEEKDAY_INDEX[code]! - 1,
+        );
+        if (iso < start) continue;
+        if (iso > hardEnd) return out;
+        if (!push(iso)) return out;
+      }
+      weekStart = addDaysISO(monday, 7 * interval);
+      if (weekStart > hardEnd) break;
+    }
+    return out.length > 0 ? out : [withSpan(start)];
+  }
+
+  let cur = start;
+  let guard = 0;
+  while (guard++ < 400) {
+    if (!push(cur)) break;
+    if (freq === "DAILY") cur = addDaysISO(cur, interval);
+    else if (freq === "WEEKLY") cur = addDaysISO(cur, 7 * interval);
+    else if (freq === "MONTHLY") {
+      const d = new Date(`${cur}T12:00:00`);
+      d.setMonth(d.getMonth() + interval);
+      cur = localDateISO(d);
+    } else {
+      const d = new Date(`${cur}T12:00:00`);
+      d.setFullYear(d.getFullYear() + interval);
+      cur = localDateISO(d);
+    }
+    if (cur > hardEnd) break;
+  }
+  return out.length > 0 ? out : [withSpan(start)];
 }
 
 /** ICS → PlanEvent (ganztägig → morgens 06:00 als Erinnerung). */
@@ -171,6 +287,7 @@ export function icsToPlanEvents(
     title: p.title,
     time: "06:00",
     date: p.date,
+    endDate: p.endDate,
     dayOffset: dayOffsetFromDate(p.date, todayISO),
     kind: "termin" as const,
     detail: [p.detail, p.location].filter(Boolean).join(" · ") || "Aus Müllkalender.",
@@ -204,6 +321,33 @@ export function icsToSchoolCalEvents(
     visibility: "shared" as const,
     repeat: "none" as const,
     source: "schoolcal" as const,
+    memberId,
+    icsUid: p.uid,
+  }));
+}
+
+/** Eigener Kalender (Google/Apple .ics) — ohne Müll-Tonnen. */
+export function icsToPersonalEvents(
+  parsed: ParsedIcsEvent[],
+  memberId: string | undefined,
+  memberName: string | undefined,
+  todayISO = localDateISO(),
+): PlanEvent[] {
+  const stamp = Date.now();
+  return parsed.map((p, i) => ({
+    id: `personal-${memberId ?? "haushalt"}-${stamp}-${i}`,
+    title: p.title,
+    time: p.time || "00:00",
+    date: p.date,
+    endDate: p.endDate,
+    dayOffset: dayOffsetFromDate(p.date, todayISO),
+    kind: "termin" as const,
+    detail:
+      [p.detail, p.location].filter(Boolean).join(" · ") ||
+      (memberName ? `Kalender · ${memberName}` : "Eigener Kalender"),
+    visibility: "shared" as const,
+    repeat: "none" as const,
+    source: "personal" as const,
     memberId,
     icsUid: p.uid,
   }));
