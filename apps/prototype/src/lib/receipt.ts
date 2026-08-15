@@ -9,6 +9,10 @@ export type ReceiptLine = {
 const SKIP =
   /^(summe|gesamt|total|zwischensumme|mwst|ust|eur|€|karte|ec|visa|mastercard|bar|wechselgeld|bedankt|vielen dank|telefon|uid|steuernr|filiale|bon|beleg|kasse|datum|uhrzeit|opening|öffnungs|www\.|http|rewe|aldi|lidl|edeka|netto|dm |rossmann|payback)/i;
 
+/** Spielzeug/Merch — gehört nicht in den Lebensmittel-Vorrat. */
+const NOT_GROCERY =
+  /\b(pokemon|pokémon|vinyl|plush|plüsch|lego|disney|hasbro|figur|figure|figures|spielzeug|console|nintendo|xbox|playstation)\b/i;
+
 const PRICE_AT_END = /(.+?)\s+(\d{1,3}[.,]\d{2})\s*(€|eur)?\s*$/i;
 const QTY_IN_NAME = /\b(\d+[.,]?\d*)\s*(kg|g|l|ml|st|stk|x|×)\b/i;
 
@@ -31,6 +35,19 @@ function cleanName(raw: string): string {
     .trim();
 }
 
+/** OCR-Müll: Unterstriche, kaum Buchstaben, kaputte Preise im Namen. */
+function looksLikeOcrJunk(name: string): boolean {
+  if (NOT_GROCERY.test(name)) return true;
+  if (/_{2,}/.test(name) || /x_{2,}/i.test(name)) return true;
+  if (/%0|,%0|___/.test(name)) return true;
+  const letters = (name.match(/[a-zäöüA-ZÄÖÜ]/g) ?? []).length;
+  const weird = (name.match(/[^a-zäöüA-ZÄÖÜ0-9\s\-.,%/+]/g) ?? []).length;
+  if (letters < 3) return true;
+  if (weird >= 3 && weird >= letters / 2) return true;
+  if (name.length > 42) return true;
+  return false;
+}
+
 function extractQty(name: string): { name: string; qty: string } {
   const m = name.match(QTY_IN_NAME);
   if (!m) return { name, qty: "1×" };
@@ -51,6 +68,7 @@ export function parseReceiptText(text: string): ReceiptLine[] {
 
   for (const line of lines) {
     if (SKIP.test(line)) continue;
+    if (looksLikeOcrJunk(line)) continue;
     if (/^\d{1,2}[./]\d{1,2}/.test(line)) continue;
     if (/^\d+$/.test(line)) continue;
 
@@ -66,13 +84,15 @@ export function parseReceiptText(text: string): ReceiptLine[] {
     } else {
       // Ohne Preis: nur behalten wenn es nach Produkt aussieht (Buchstaben)
       if (!/[a-zäöü]/i.test(line)) continue;
-      if (line.length < 4 || line.length > 48) continue;
+      if (line.length < 4 || line.length > 40) continue;
     }
 
     const cleaned = cleanName(namePart);
-    if (cleaned.length < 2 || SKIP.test(cleaned)) continue;
+    if (cleaned.length < 2 || SKIP.test(cleaned) || looksLikeOcrJunk(cleaned))
+      continue;
 
     const { name, qty } = extractQty(cleaned);
+    if (looksLikeOcrJunk(name)) continue;
     const key = name.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
