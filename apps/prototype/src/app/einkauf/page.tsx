@@ -14,6 +14,7 @@ import {
   shopListLabel,
   type ShopListId,
 } from "@/lib/shop-lists";
+import { lowPantryNotOnList } from "@/lib/today-agenda";
 
 const captureTitle: Record<ShopListId, string> = {
   einkauf: "Zur Einkaufsliste",
@@ -43,6 +44,7 @@ export default function EinkaufPage() {
     [state.shoppingList, listId],
   );
   const isEinkauf = listId === "einkauf";
+  const needPantry = useMemo(() => lowPantryNotOnList(state), [state]);
 
   return (
     <AppShell title="Einkauf" subtitle="Liste · Märkte · Vorräte · Essen">
@@ -108,20 +110,44 @@ export default function EinkaufPage() {
         </section>
       )}
 
+      {isEinkauf && needPantry.length > 0 ? (
+        <button
+          type="button"
+          onClick={() =>
+            addShopItems(
+              needPantry.map((p) => p.name),
+              { source: "pantry", listId: "einkauf" },
+            )
+          }
+          className="mt-3 w-full rounded-2xl border border-warn/30 bg-warn/10 px-4 py-3 text-left text-sm font-semibold text-ink"
+        >
+          {needPantry.length === 1
+            ? `${needPantry[0]!.name} wird knapp — auf die Liste`
+            : `${needPantry.length} Dinge werden knapp — auf die Liste`}
+        </button>
+      ) : null}
+
       {isEinkauf ? (
-        <section className="mt-4 rounded-2xl border border-line bg-white/80 px-4 py-3">
-          <p className="text-sm font-semibold text-ink">Liste erweitern so:</p>
-          <p className="mt-1 text-xs text-muted">
-            Tippen · aus Bekanntem wählen · Barcode · Vorräte · Essen · Helfer
-          </p>
-          <p className="mt-1 text-xs text-muted">
-            Beleg nach dem Einkauf: unter{" "}
-            <Link href="/einkauf/vorraete" className="font-semibold text-save">
-              Vorräte
-            </Link>
-            .
-          </p>
-        </section>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <Link
+            href="/einkauf/vorraete"
+            className="rounded-2xl border border-line bg-white/80 px-2 py-2.5 text-center text-xs font-semibold text-ink"
+          >
+            Vorräte
+          </Link>
+          <Link
+            href="/einkauf/essensplan"
+            className="rounded-2xl border border-line bg-white/80 px-2 py-2.5 text-center text-xs font-semibold text-ink"
+          >
+            Essen
+          </Link>
+          <Link
+            href="/einkauf/maerkte"
+            className="rounded-2xl border border-line bg-white/80 px-2 py-2.5 text-center text-xs font-semibold text-ink"
+          >
+            Märkte
+          </Link>
+        </div>
       ) : null}
 
       <div className="mt-3 space-y-3">

@@ -5,6 +5,7 @@ import {
   sessionCookieHeader,
 } from "@/lib/server/demo-session";
 import { loadHouseholdState } from "@/lib/server/demo-store";
+import { touchDemoActivity } from "@/lib/server/demo-activity";
 
 export async function POST(req: Request) {
   let body: { username?: string; password?: string };
@@ -26,6 +27,7 @@ export async function POST(req: Request) {
     account.householdId,
     account.displayName,
   );
+  await touchDemoActivity(account.householdId);
   const token = encodeSession(account);
 
   const res = NextResponse.json({

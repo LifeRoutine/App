@@ -1,9 +1,9 @@
-import { eventsOnDate, localDateISO } from "@/lib/plan-dates";
-import { itemsOnList, SHOP_LISTS } from "@/lib/shop-lists";
+import { addDaysISO, eventsOnDate, localDateISO } from "@/lib/plan-dates";
+import { itemsOnList, SHOP_LISTS, shopListId } from "@/lib/shop-lists";
 import type { AppState, PriorityKind } from "@/lib/types";
 import { classifyWasteBin, wasteBinLabel } from "@/lib/waste-bins";
 
-export type AgendaKind = PriorityKind | "urlaub" | "muell" | "ferien";
+export type AgendaKind = PriorityKind | "urlaub" | "muell" | "ferien" | "vorrat";
 
 export type AgendaItem = {
   id: string;
@@ -26,6 +26,15 @@ function monthsBefore(iso: string, months: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+function openOnEinkauf(state: AppState, name: string): boolean {
+  return state.shoppingList.some(
+    (i) =>
+      shopListId(i) === "einkauf" &&
+      !i.checked &&
+      i.name.toLowerCase() === name.toLowerCase(),
+  );
+}
+
 /** Was heute wirklich ansteht — Alltagssprache, keine €/Min-Kacheln. */
 export function buildTodayAgenda(
   state: AppState,
@@ -33,6 +42,7 @@ export function buildTodayAgenda(
 ): AgendaItem[] {
   const items: AgendaItem[] = [];
   const todayEvents = eventsOnDate(state.events, today, today);
+  const tomorrow = addDaysISO(today, 1);
 
   for (const ev of todayEvents) {
     const bin =
@@ -103,6 +113,24 @@ export function buildTodayAgenda(
     });
   }
 
+  // Morgen Müll → heute schon anstoßen
+  for (const ev of eventsOnDate(state.events, tomorrow, today)) {
+    const bin =
+      ev.wasteBin ??
+      (ev.source === "ics" ? classifyWasteBin(ev.title) : null);
+    if (bin || ev.source === "ics") {
+      items.push({
+        id: `tmr-${ev.id}`,
+        kind: "muell",
+        title: bin
+          ? `${wasteBinLabel[bin]} — morgen Abfuhr`
+          : `${ev.title} — morgen`,
+        detail: "Heute schon rausstellen, dann ist morgen erledigt.",
+        href: "/plan",
+      });
+    }
+  }
+
   const meal = state.mealPlan.find((m) => m.dayLabel === "Heute");
   if (meal) {
     items.push({
@@ -113,6 +141,26 @@ export function buildTodayAgenda(
         ? `Noch fehlen: ${meal.missing.join(", ")}`
         : meal.note || `${meal.minutes} Min.`,
       href: meal.recipeId ? `/essen/${meal.recipeId}` : "/einkauf/essensplan",
+    });
+  }
+
+  const lowPantry = state.pantry.filter(
+    (p) => p.status !== "ok" && !openOnEinkauf(state, p.name),
+  );
+  if (lowPantry.length > 0) {
+    const names = lowPantry
+      .slice(0, 3)
+      .map((p) => p.name)
+      .join(", ");
+    items.push({
+      id: "pantry-low",
+      kind: "vorrat",
+      title:
+        lowPantry.length === 1
+          ? `${lowPantry[0]!.name} wird knapp`
+          : `${lowPantry.length} Dinge werden knapp`,
+      detail: `${names}${lowPantry.length > 3 ? " …" : ""} — auf die Liste setzen.`,
+      href: "/einkauf/vorraete",
     });
   }
 
@@ -169,7 +217,7 @@ export function buildTodayAgenda(
     }
   }
 
-  return items.slice(0, 6);
+  return items.slice(0, 7);
 }
 
 export const agendaKindLabel: Record<AgendaKind, string> = {
@@ -181,4 +229,12 @@ export const agendaKindLabel: Record<AgendaKind, string> = {
   urlaub: "Urlaub",
   muell: "Müll",
   ferien: "Ferien",
+  vorrat: "Vorrat",
 };
+
+/** Knapp und noch nicht auf der Einkaufsliste. */
+export function lowPantryNotOnList(state: AppState) {
+  return state.pantry.filter(
+    (p) => p.status !== "ok" && !openOnEinkauf(state, p.name),
+  );
+}

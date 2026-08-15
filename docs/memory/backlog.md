@@ -45,6 +45,7 @@ Stand: 2026-08-09 · inkl. Abgleich Gemini-Empfehlungen
 
 ## USP schärfen
 - [ ] Stärker: Vorrat/Mindestvorrat ↔ Routinen/Fristen automatisch verknüpfen (nicht nur Liste)
+- [x] Vorrat knapp → Heute + Einkauf + ein Tippen auf die Liste (2026-08-15)
 - [ ] Müll: Landkreis-/Kommunen-Kalender anbinden (pro Region anders; ICS/Link/manuell — kein Scraping, nichts erfinden)
 - [ ] Schwesterlogik AquaRoutine später, nicht Blocker für P1
 

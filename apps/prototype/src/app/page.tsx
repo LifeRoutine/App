@@ -1,13 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { profileSubtitle, useApp } from "@/lib/app-context";
-import { agendaKindLabel, buildTodayAgenda } from "@/lib/today-agenda";
+import {
+  agendaKindLabel,
+  buildTodayAgenda,
+  lowPantryNotOnList,
+} from "@/lib/today-agenda";
 
 export default function HeutePage() {
-  const { state, weather, cycleMealSuggestion } = useApp();
+  const {
+    state,
+    weather,
+    cycleMealSuggestion,
+    addShopItems,
+    addMissingFromMeal,
+  } = useApp();
+  const [flash, setFlash] = useState<string | null>(null);
 
   const weekday = new Intl.DateTimeFormat("de-DE", {
     weekday: "long",
@@ -19,6 +30,32 @@ export default function HeutePage() {
   const mealStep = steps.find((s) => s.kind === "essen");
   const rest = steps.filter((s) => s.kind !== "essen");
   const todayMeal = state.mealPlan.find((m) => m.dayLabel === "Heute");
+  const lowPantry = useMemo(() => lowPantryNotOnList(state), [state]);
+  const mealMissing = todayMeal?.missing ?? [];
+
+  function flashMsg(text: string) {
+    setFlash(text);
+    window.setTimeout(() => setFlash(null), 2000);
+  }
+
+  function pushLowPantry() {
+    if (lowPantry.length === 0) return;
+    addShopItems(
+      lowPantry.map((p) => p.name),
+      { source: "pantry", listId: "einkauf" },
+    );
+    flashMsg(
+      lowPantry.length === 1
+        ? `${lowPantry[0]!.name} → Liste`
+        : `${lowPantry.length} Dinge → Liste`,
+    );
+  }
+
+  function pushMealMissing() {
+    if (!todayMeal || mealMissing.length === 0) return;
+    addMissingFromMeal(todayMeal.id);
+    flashMsg(`${mealMissing.join(", ")} → Liste`);
+  }
 
   return (
     <AppShell
@@ -33,6 +70,12 @@ export default function HeutePage() {
           Einstellungen
         </Link>
       </div>
+
+      {flash ? (
+        <p className="mb-3 rounded-xl bg-mint px-3 py-2 text-center text-sm font-semibold text-save">
+          {flash}
+        </p>
+      ) : null}
 
       <section className="hero-heute animate-rise rounded-2xl px-4 py-4">
         <p className="text-sm text-white/90">
@@ -50,6 +93,30 @@ export default function HeutePage() {
           {weather.source === "demo" ? " · Wetter Demo" : ""}
         </p>
       </section>
+
+      {lowPantry.length > 0 || mealMissing.length > 0 ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {lowPantry.length > 0 ? (
+            <button
+              type="button"
+              onClick={pushLowPantry}
+              className="rounded-2xl bg-green px-3.5 py-2.5 text-xs font-semibold text-white"
+            >
+              Knappes auf Liste
+              {lowPantry.length > 1 ? ` (${lowPantry.length})` : ""}
+            </button>
+          ) : null}
+          {mealMissing.length > 0 ? (
+            <button
+              type="button"
+              onClick={pushMealMissing}
+              className="rounded-2xl border border-line bg-white px-3.5 py-2.5 text-xs font-semibold text-ink"
+            >
+              Fehlendes vom Essen
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       {mealStep && todayMeal ? (
         <div className="mt-3 rounded-2xl border border-green/25 bg-mint/50 px-3.5 py-3">
@@ -108,6 +175,27 @@ export default function HeutePage() {
           )}
         </div>
       </section>
+
+      <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+        <Link
+          href="/einkauf"
+          className="rounded-2xl border border-line bg-white/80 px-2 py-3 text-xs font-semibold text-ink"
+        >
+          Liste
+        </Link>
+        <Link
+          href="/einkauf/vorraete"
+          className="rounded-2xl border border-line bg-white/80 px-2 py-3 text-xs font-semibold text-ink"
+        >
+          Vorräte
+        </Link>
+        <Link
+          href="/plan"
+          className="rounded-2xl border border-line bg-white/80 px-2 py-3 text-xs font-semibold text-ink"
+        >
+          Plan
+        </Link>
+      </div>
     </AppShell>
   );
 }

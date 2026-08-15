@@ -8,6 +8,7 @@ import { InstallHint } from "@/components/install-hint";
 import { LocationSearch } from "@/components/location-search";
 import { PinSettings } from "@/components/pin-settings";
 import { ReminderSettings } from "@/components/reminder-settings";
+import { DemoActivityPanel } from "@/components/demo-activity-panel";
 import { useApp } from "@/lib/app-context";
 import { householdTypeLabel } from "@/lib/mock-data";
 import type { HouseholdType } from "@/lib/types";
@@ -154,6 +155,8 @@ export default function EinstellungenPage() {
             {isGuest ? "Gast beenden" : "Abmelden"}
           </button>
         </section>
+
+        {demoUser ? <DemoActivityPanel /> : null}
 
         <ReminderSettings />
 

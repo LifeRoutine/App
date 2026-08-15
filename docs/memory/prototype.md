@@ -5,12 +5,9 @@ Pfad: `C:\LifeRoutine\apps\prototype`
 
 ## Funktionierender Lokal-Prototyp
 - Onboarding inkl. Ortssuche (OSM) + GPS
-- Heute: Tagespunkte (Müll, Frist, Urlaub, Liste) + **Was gibt’s heute?**
-- Erinnerungen: Einstellungen → an; Hinweis beim Öffnen; Plan wird im Service Worker vorgehalten (Android/PWA manchmal später; iPhone nur bei offener App)
-- Plan: **Termin · Urlaub · Kalender laden** (Müll, Ferien, Schule, **Mein Kalender**)
-- Einkauf: **drei Listen** Einkauf / Baumarkt / Reise · Märkte · Vorräte · Essen · Katalog · Angebote-Stub
-- Liste: Tippen/Barcode, **bekannte Produkte antippen** (Hintergrund-Speicher), Angebot markieren, Route, Extraweg, privat/geteilt, Erledigt → Vorrat
-- Katalog: wächst mit **Liste + Scan**; Einträge löschbar; Vorschläge beim Hinzufügen
+- Heute: Tagespunkte (Müll inkl. morgen, Frist, Urlaub, knapper Vorrat, Liste) + **Was gibt’s heute?** + Schnellaktionen „Knappes / Fehlendes auf Liste“
+- Einkauf: **drei Listen** · Hinweis bei knappem Vorrat · Kurzlinks Vorräte/Essen/Märkte
+- Vorräte: Knappes zuerst · „Auf die Liste“ / schon auf Liste · Bulk-Button
 - Haushalt: Mitglieder, Einladungs-Code, Beitritt-Demo (`/haushalt`)
 - Zuhause: Routinen + neue hinzufügen
 - Plan: Kalender mit **Monatsbalken**, Termine, **Müllkalender .ics**, **Schulferien**, **Schulkalender Kind**, **eigener Kalender** (.ics/Link), **Urlaub pro Person**, Fristen, Sichtbarkeit, Wiederholung

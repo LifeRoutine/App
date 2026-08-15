@@ -5,6 +5,7 @@ import {
   loadHouseholdState,
   saveHouseholdState,
 } from "@/lib/server/demo-store";
+import { touchDemoActivity } from "@/lib/server/demo-activity";
 
 export async function GET(req: Request) {
   const session = readSessionCookie(req.headers.get("cookie"));
@@ -15,6 +16,7 @@ export async function GET(req: Request) {
     session.householdId,
     session.displayName,
   );
+  await touchDemoActivity(session.householdId);
   return NextResponse.json({ state, store });
 }
 
@@ -37,5 +39,6 @@ export async function PUT(req: Request) {
   // Anzeigename am Login festhalten
   state.profile.displayName = session.displayName;
   const store = await saveHouseholdState(session.householdId, state);
+  await touchDemoActivity(session.householdId);
   return NextResponse.json({ ok: true, store });
 }

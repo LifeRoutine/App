@@ -3,6 +3,7 @@ import {
   loadHouseholdState,
   isServerStoreConfigured,
 } from "@/lib/server/demo-store";
+import { touchDemoActivity } from "@/lib/server/demo-activity";
 import { readSessionCookie } from "@/lib/server/demo-session";
 
 export async function GET(req: Request) {
@@ -14,6 +15,7 @@ export async function GET(req: Request) {
     session.householdId,
     session.displayName,
   );
+  await touchDemoActivity(session.householdId);
   return NextResponse.json({
     authenticated: true,
     user: {
