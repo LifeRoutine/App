@@ -1,4 +1,4 @@
-﻿# Entscheidungen – LifeRoutine
+# Entscheidungen – LifeRoutine
 
 Stand: 2026-08-09
 
@@ -10,6 +10,9 @@ Stand: 2026-08-09
 ## Preis / Monetarisierung
 - Konzept-Platzhalter: Plus **7,99 €/Monat**, Jahresabo ca. **79 €**, Free mit begrenztem Nutzen.
 - **Preis ist nicht final** — Stefan: darf geändert werden; mit Nutzenkommunikation (Ersparnis/Zeit) testen.
+- **vs. Dæly (2026-08-13):** Die werben mit Kaufgerät und **ohne Monatsabo** (App nur mit Gerät). LifeRoutine: **praktisch und günstig** halten — kein teures Abo als Einstieg; Free stark, Plus nur für klaren Mehrwert (Sync/Haushalt), Kosten niedrig halten (Open-Meteo Free nur nicht-kommerziell; Infra sparsam).
+- **Stefan (2026-08-13):** Auch **weniger Geld** als der Konzept-Platzhalter ok — Ziel: **eigene Kosten decken**, nicht maximaler Abo-Preis. Siehe `docs/memory/costs.md`.
+- **Hosting später (2026-08-14):** Umzug **Vercel → Strato** vorgesehen — nur Linux-V-Server/Cloud mit Root (Next.js), nicht klassisches Webhosting. Bis Tester-Ende bei Vercel bleiben.
 - Keine Werbung / keine Werbeprofile als Produktprinzip.
 
 ## Positionierung

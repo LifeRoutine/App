@@ -8,6 +8,7 @@ Persönliches Gedächtnis über alle Projekte: `C:\cursor\memory\`
 | Datei | Zweck |
 |---|---|
 | `decisions.md` | Getroffene Produkt-/UX-/Preisentscheidungen |
+| `costs.md` | Infra-Kosten, Preisdeckung, später Strato-Umzug |
 | `backlog.md` | Ideen, später, bewusst nicht jetzt |
 | `domain.md` | Produktkonzept, IA, Module, Geschäftsmodell |
 | `prototype.md` | Stand des UX-Prototyps |
